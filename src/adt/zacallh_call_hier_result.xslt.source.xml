@@ -1,0 +1,166 @@
+<?sap.transform simple?>
+<tt:transform xmlns:tt="http://www.sap.com/transformation-templates"
+              xmlns:hierarchy="http://www.devepos.com/adt/aht/callhierarchy"
+              xmlns:cl="http://www.sap.com/abapxml/types/class-pool/zif_acallh_ty_adt">
+
+  <tt:root name="hierarchy_result" type="cl:ty_call_hierarchy_result" />
+
+  <tt:template>
+    <tt:apply name="hierarchyResult">
+      <tt:with-root name="hierarchy_result" ref="hierarchy_result"/>
+    </tt:apply>
+  </tt:template>
+
+  <!-- Template for the result -->
+  <tt:template name="hierarchyResult">
+    <tt:context>
+      <tt:root name="hierarchy_result"/>
+    </tt:context>
+
+    <hierarchy:result tt:extensible="deep">
+      <tt:cond check="not-initial(hierarchy_result.origin_type)">
+        <tt:attribute name="hierarchy:originType" value-ref="hierarchy_result.origin_type" />
+      </tt:cond>
+
+      <tt:cond check="not-initial(hierarchy_result.origin_object_name)">
+        <tt:attribute name="hierarchy:originObjectName" value-ref="hierarchy_result.origin_object_name" />
+      </tt:cond>
+
+      <tt:cond check="not-initial(hierarchy_result.origin_encl_object_name)">
+        <tt:attribute name="hierarchy:originEnclObjectName" value-ref="hierarchy_result.origin_encl_object_name" />
+      </tt:cond>
+
+      <tt:apply name="entries">
+        <tt:with-root name="entries" ref="hierarchy_result.entries"/>
+      </tt:apply>
+
+    </hierarchy:result>
+
+  </tt:template>
+
+  <!-- Template for the hierarchy entries-->
+  <tt:template name="entries">
+    <tt:context>
+      <tt:root name="entries" type="cl:ty_comp_units"/>
+    </tt:context>
+
+    <tt:loop ref="entries">
+
+      <hierarchy:entry tt:extensible="deep">
+        <tt:cond check="not-initial($ref.encl_obj_name)">
+          <tt:attribute name="hierarchy:enclObjName" value-ref="$ref.encl_obj_name" />
+        </tt:cond>
+
+        <tt:cond check="not-initial($ref.encl_obj_display_name)">
+          <tt:attribute name="hierarchy:enclObjDisplayName" value-ref="$ref.encl_obj_display_name" />
+        </tt:cond>
+
+        <!-- add main information about adt -->
+        <tt:cond check="not-initial($ref.object_ref)">
+          <tt:apply name="adtObjProperties">
+            <tt:with-root name="object_ref" ref="$ref.object_ref" />
+          </tt:apply>
+        </tt:cond>
+
+        <!-- Add call positions -->
+        <tt:cond check="not-initial($ref.call_positions)">
+           <tt:apply name="callPositions">
+             <tt:with-root name="call_positions" ref="$ref.call_positions"/>
+           </tt:apply>
+        </tt:cond>
+
+        <!-- add information about method propertis -->
+        <!--<tt:cond check="not-initial($ref.method_props)">-->
+          <tt:apply name="methodProperties">
+            <tt:with-root name="method_props" ref="$ref.method_props" />
+          </tt:apply>
+        <!--</tt:cond>-->
+      </hierarchy:entry>
+
+    </tt:loop>
+  </tt:template>
+
+  <!-- Template for method properties -->
+  <tt:template name="methodProperties">
+    <tt:context>
+      <tt:root name="method_props" type="cl:ty_method_properties"/>
+    </tt:context>
+
+    <hierarchy:methodProperties>
+      <tt:cond check="not-initial(method_props.is_final)">
+        <tt:attribute name="hierarchy:isFinal" value-ref="method_props.is_final" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.is_abstract)">
+        <tt:attribute name="hierarchy:isAbstract" value-ref="method_props.is_abstract" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.is_redefined)">
+        <tt:attribute name="hierarchy:isRedefined" value-ref="method_props.is_redefined" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.is_handler)">
+        <tt:attribute name="hierarchy:isHandler" value-ref="method_props.is_handler" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.is_constructor)">
+        <tt:attribute name="hierarchy:isConstructor" value-ref="method_props.is_constructor" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.is_static)">
+        <tt:attribute name="hierarchy:isStatic" value-ref="method_props.is_static" option="format(boolean)" />
+      </tt:cond>
+      <tt:cond check="not-initial(method_props.visibility)">
+        <tt:attribute name="hierarchy:visibility" value-ref="method_props.visibility" />
+      </tt:cond>
+    </hierarchy:methodProperties>
+
+  </tt:template>
+
+  <!-- Template for the call positions of a single reference -->
+  <tt:template name="callPositions">
+    <tt:context>
+      <tt:root name="call_positions" type="cl:ty_call_positions"/>
+    </tt:context>
+
+    <!--<hierarchy:callPositions>-->
+      <tt:loop ref="call_positions">
+        <hierarchy:callPosition tt:extensible="deep">
+           <tt:attribute name="hierarchy:line" value-ref="$ref.line" />
+           <tt:attribute name="hierarchy:column" value-ref="$ref.column" />
+           <tt:attribute name="hierarchy:uri" value-ref="$ref.uri" />
+        </hierarchy:callPosition>
+      </tt:loop>
+    <!--</hierarchy:callPositions>-->
+  </tt:template>
+
+  <!-- Template for ADT object attributes -->
+  <tt:template name="adtObjProperties">
+    <tt:context>
+      <tt:root name="object_ref"/>
+    </tt:context>
+
+    <tt:cond check="not-initial(object_ref.uri)">
+      <tt:attribute name="hierarchy:uri" value-ref="object_ref.uri"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(object_ref.parent_uri)">
+      <tt:attribute name="hierarchy:parentUri" value-ref="object_ref.parent_uri"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(object_ref.type)">
+      <tt:attribute name="hierarchy:type" value-ref="object_ref.type"/>
+    </tt:cond>
+
+    <tt:cond s-check="not-initial(object_ref.name)">
+      <tt:attribute name="hierarchy:name" value-ref="object_ref.name"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(object_ref.owner)">
+      <tt:attribute name="hierarchy:owner" value-ref="object_ref.owner"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(object_ref.package_name)">
+      <tt:attribute name="hierarchy:packageName" value-ref="object_ref.package_name"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(object_ref.description)">
+      <tt:attribute name="hierarchy:description" value-ref="object_ref.description"/>
+    </tt:cond>
+  </tt:template>
+</tt:transform>

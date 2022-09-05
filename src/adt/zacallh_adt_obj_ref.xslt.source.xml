@@ -1,0 +1,62 @@
+<?sap.transform simple?>
+<tt:transform xmlns:tt="http://www.sap.com/transformation-templates"
+              xmlns:adtbase="http://www.devepos.com/adt/base"
+              xmlns:cl="http://www.sap.com/abapxml/types/class-pool/zif_acallh_ty_adt">
+
+  <tt:root name="adt_obj_ref" type="cl:ty_adt_obj_ref"/>
+
+  <tt:template>
+    <tt:apply name="adtObjRef">
+      <tt:with-root name="adt_obj_ref" ref="adt_obj_ref"/>
+    </tt:apply>
+  </tt:template>
+
+  <!-- PUBLIC TEMPLATES (can be called from other transformations) -->
+  <tt:template name="adtObjRef">
+    <tt:context>
+      <tt:root name="adt_obj_ref"/>
+    </tt:context>
+
+    <adtbase:adtObjRef tt:extensible="deep">
+      <tt:apply name="adtObjRefAttributes">
+        <tt:with-root name="adt_obj_ref" ref="adt_obj_ref"/>
+      </tt:apply>
+    </adtbase:adtObjRef>
+  </tt:template>
+
+  <!-- PUBLIC TEMPLATES (can be called from other transformations) -->
+  <tt:template name="adtObjRefAttributes">
+    <tt:context>
+      <tt:root name="adt_obj_ref"/>
+    </tt:context>
+
+    <tt:cond check="not-initial(adt_obj_ref.uri)">
+      <tt:attribute name="adtbase:uri" value-ref="adt_obj_ref.uri"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(adt_obj_ref.parent_uri)">
+      <tt:attribute name="adtbase:parentUri" value-ref="adt_obj_ref.parent_uri"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(adt_obj_ref.type)">
+      <tt:attribute name="adtbase:type" value-ref="adt_obj_ref.type"/>
+    </tt:cond>
+
+    <tt:cond s-check="not-initial(adt_obj_ref.name)">
+      <tt:attribute name="adtbase:name" value-ref="adt_obj_ref.name"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(adt_obj_ref.owner)">
+      <tt:attribute name="adtbase:owner" value-ref="adt_obj_ref.owner"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(adt_obj_ref.package_name)">
+      <tt:attribute name="adtbase:packageName" value-ref="adt_obj_ref.package_name"/>
+    </tt:cond>
+
+    <tt:cond check="not-initial(adt_obj_ref.description)">
+      <tt:attribute name="adtbase:description" value-ref="adt_obj_ref.description"/>
+    </tt:cond>
+  </tt:template>
+
+</tt:transform>
