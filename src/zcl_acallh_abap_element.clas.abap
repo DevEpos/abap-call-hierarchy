@@ -117,7 +117,7 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
     ENDIF.
 
     DATA(mapping_options) = adt_tools_factory->create_mapping_options( ).
-    mapping_options->set_use_package( abap_true ).
+
     TRY.
         DATA(obj_ref) = uri_mapper->map_include_to_objref(
           program     = prog
