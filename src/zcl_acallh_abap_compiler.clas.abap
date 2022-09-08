@@ -12,6 +12,7 @@ CLASS zcl_acallh_abap_compiler DEFINITION
       get
         IMPORTING
           main_prog     TYPE progname
+          compiler      TYPE REF TO cl_abap_compiler OPTIONAL
           cache_active  TYPE abap_bool OPTIONAL
         RETURNING
           VALUE(result) TYPE REF TO zif_acallh_abap_compiler.
@@ -33,7 +34,8 @@ CLASS zcl_acallh_abap_compiler DEFINITION
     METHODS:
       constructor
         IMPORTING
-          main_prog TYPE progname.
+          main_prog TYPE progname
+          compiler  TYPE REF TO cl_abap_compiler OPTIONAL.
 ENDCLASS.
 
 
@@ -48,12 +50,15 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
       IF cached_instance IS INITIAL.
         INSERT VALUE #(
             main_prog = main_prog
-            compiler  = NEW zcl_acallh_abap_compiler( main_prog )
+            compiler  = NEW zcl_acallh_abap_compiler( main_prog = main_prog
+                                                      compiler  = compiler )
           ) INTO TABLE compiler_cache REFERENCE INTO cached_instance.
       ENDIF.
       result = cached_instance->compiler.
     ELSE.
-      result = NEW zcl_acallh_abap_compiler( main_prog ).
+      result = NEW zcl_acallh_abap_compiler(
+        main_prog = main_prog
+        compiler  = compiler ).
     ENDIF.
 
   ENDMETHOD.
@@ -61,7 +66,13 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
 
   METHOD constructor.
     me->main_prog = main_prog.
-    abap_compiler = NEW cl_abap_compiler( p_name = main_prog ).
+    IF compiler IS BOUND.
+      abap_compiler = compiler.
+    ELSE.
+      abap_compiler = NEW cl_abap_compiler(
+        p_name             = main_prog
+        p_no_package_check = abap_true ).
+    ENDIF.
   ENDMETHOD.
 
   METHOD zif_acallh_abap_compiler~get_src_by_start_end_refs.

@@ -10,11 +10,11 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
         RETURNING
           VALUE(result) TYPE REF TO zif_acallh_call_hierarchy_srv,
       "! <p class="shorttext synchronized" lang="en">Retrieves compilation unit at URI</p>
-      get_comp_unit_from_uri
+      get_abap_element_From_uri
         IMPORTING
           uri           TYPE string
         RETURNING
-          VALUE(result) TYPE REF TO zif_acallh_compilation_unit.
+          VALUE(result) TYPE REF TO zif_acallh_abap_element.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -28,29 +28,17 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
         RETURNING
           VALUE(result) TYPE ris_s_adt_data_request
         RAISING
-          cx_ris_exception,
-
-      is_class_local_impl
-        IMPORTING
-          uri           TYPE string
-        RETURNING
-          VALUE(result) TYPE abap_bool.
+          cx_ris_exception.
 ENDCLASS.
 
 
 
 CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
 
-  METHOD get_comp_unit_from_uri.
+  METHOD get_abap_element_From_uri.
     TRY.
-        DATA(data_request) = map_uri_to_data_request( uri ).
-
-        result = zcl_acallh_comp_unit_factory=>get_instance( )->create_comp_unit_from_ext(
-          data_request = VALUE #(
-            orig_request      = data_request
-            uri               = uri
-            is_uri_in_ccimp   = is_class_local_impl( uri )
-            source_pos_of_uri = zcl_acallh_adt_uri_util=>get_uri_source_start_pos( uri ) ) ).
+        DATA(element_info) = zcl_acallh_adt_pos_mapper=>create( )->map_uri_to_abap_element( uri ).
+        result = zcl_acallh_abap_element_fac=>get_instance( )->create_abap_element( element_info = element_info ).
       CATCH cx_ris_exception zcx_acallh_exception.
         "handle exception
     ENDTRY.
@@ -60,7 +48,7 @@ CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
   METHOD get_call_hierarchy_srv.
     IF hierarchy_srv IS INITIAL.
       hierarchy_srv = NEW zcl_acallh_call_hierarchy_srv(
-        comp_unit_factory = zcl_acallh_comp_unit_factory=>get_instance( ) ).
+        abap_elem_factory = zcl_acallh_abap_element_fac=>get_instance( ) ).
     ENDIF.
 
     result = hierarchy_srv.
@@ -76,10 +64,6 @@ CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
       IMPORTING
         es_data_request = result ).
 
-  ENDMETHOD.
-
-  METHOD is_class_local_impl.
-    result = xsdbool( matches( val = uri regex = `^/sap/bc/adt/oo/classes/[\w%]+/includes/implementation.*` ) ).
   ENDMETHOD.
 
 ENDCLASS.

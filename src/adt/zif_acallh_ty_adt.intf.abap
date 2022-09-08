@@ -33,22 +33,22 @@ INTERFACE zif_acallh_ty_adt
 
     ty_call_positions TYPE STANDARD TABLE OF ty_call_position WITH EMPTY KEY,
 
-    BEGIN OF ty_comp_unit,
+    BEGIN OF ty_abap_element,
       object_ref            TYPE ty_adt_obj_ref,
       "! Enclosing object name (e.g. Interface, Class, Function Group)
       encl_obj_name         TYPE string,
       encl_obj_display_name TYPE string,
       method_props          TYPE ty_method_properties,
       call_positions        TYPE ty_call_positions,
-    END OF ty_comp_unit,
+    END OF ty_abap_element,
 
-    ty_comp_units TYPE STANDARD TABLE OF ty_comp_unit WITH EMPTY KEY,
+    ty_abap_elements TYPE STANDARD TABLE OF ty_abap_element WITH EMPTY KEY,
 
     BEGIN OF ty_call_hierarchy_result,
       origin_type             TYPE string,
       origin_object_name      TYPE string,
       origin_encl_object_name TYPE string,
-      entries TYPE ty_comp_units,
+      entries TYPE ty_abap_elements,
     END OF ty_call_hierarchy_result.
 
 ENDINTERFACE.

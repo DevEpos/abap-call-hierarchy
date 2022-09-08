@@ -3,9 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOCLASS>
-    <CLSNAME>ZCL_ACALLH_COMP_UNIT_FACTORY</CLSNAME>
+    <CLSNAME>ZCL_ACALLH_MAINPROG_RESOLVER</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Compilation unit factory</DESCRIPT>
+    <DESCRIPT>Determines main program from object</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>
@@ -13,10 +13,10 @@
    </VSEOCLASS>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_ACALLH_COMP_UNIT_FACTORY</CLSNAME>
-     <CMPNAME>GET_INSTANCE</CMPNAME>
+     <CLSNAME>ZCL_ACALLH_MAINPROG_RESOLVER</CLSNAME>
+     <CMPNAME>RESOLVE_MAIN_PROG</CMPNAME>
      <LANGU>E</LANGU>
-     <DESCRIPT>Retrieves factory instance</DESCRIPT>
+     <DESCRIPT>Fills main program if still empty</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>

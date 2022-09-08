@@ -41,7 +41,7 @@
   <!-- Template for the hierarchy entries-->
   <tt:template name="entries">
     <tt:context>
-      <tt:root name="entries" type="cl:ty_comp_units"/>
+      <tt:root name="entries" type="cl:ty_abap_elements"/>
     </tt:context>
 
     <tt:loop ref="entries">

@@ -45,7 +45,7 @@
      <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>
      <CMPNAME>GET_SRC_BY_START_END_REFS</CMPNAME>
      <LANGU>E</LANGU>
-     <DESCRIPT>Retrieves compilation unit src info by begin/end refs</DESCRIPT>
+     <DESCRIPT>Retrieves ABAP element src info by begin/end refs</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>

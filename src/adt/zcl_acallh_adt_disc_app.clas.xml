@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>ZCL_ACALLH_ADT_DISC_APP</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Router for ABAP Object Analysis Tools</DESCRIPT>
+    <DESCRIPT>Router for ABAP Call Hierarchy</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

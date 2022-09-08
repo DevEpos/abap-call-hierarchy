@@ -1,4 +1,4 @@
-"! <p class="shorttext synchronized" lang="en">Router for ABAP Object Analysis Tools</p>
+"! <p class="shorttext synchronized" lang="en">Router for ABAP Call Hierarchy</p>
 CLASS zcl_acallh_adt_disc_app DEFINITION
   PUBLIC
   INHERITING FROM cl_adt_disc_res_app_base
@@ -55,7 +55,7 @@ CLASS zcl_acallh_adt_disc_app IMPLEMENTATION.
 
 
   METHOD get_application_title.
-    result = 'ABAP Object Analysis Tools'.
+    result = 'ABAP Call Hierarchy'.
   ENDMETHOD.
 
 
@@ -68,11 +68,11 @@ CLASS zcl_acallh_adt_disc_app IMPLEMENTATION.
     DATA(call_hierarchy_coll) = registry->register_discoverable_resource(
       url             = c_call_hierarchy_uri
       handler_class   = c_handlers-call_hierarchy
-      description     = 'ABAP Call Hierarchy'
+      description     = 'Call Hierarchy'
       category_scheme = c_root_scheme && c_call_hierarchy_uri
       category_term   = 'callHierarchy' ).
 
-    DATA(template) = |{ c_call_hierarchy_uri }\{?{ zif_acallh_c_calh_global=>c_call_hierarchy_params-uri }*\}|
+    DATA(template) = |{ c_call_hierarchy_uri }\{?{ zif_acallh_c_global=>c_call_hierarchy_params-uri }*\}|
                      .
     call_hierarchy_coll->register_disc_res_w_template(
       relation      = c_root_rel_scheme && c_call_hierarchy_uri

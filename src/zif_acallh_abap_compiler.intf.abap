@@ -3,12 +3,12 @@ INTERFACE zif_acallh_abap_compiler
   PUBLIC.
 
   METHODS:
-    "! <p class="shorttext synchronized" lang="en">Retrieves compilation unit src info by begin/end refs</p>
+    "! <p class="shorttext synchronized" lang="en">Retrieves ABAP element src info by begin/end refs</p>
     get_src_by_start_end_refs
       IMPORTING
         full_name     TYPE string
       RETURNING
-        VALUE(result) TYPE zif_acallh_ty_global=>ty_cu_src_info,
+        VALUE(result) TYPE zif_acallh_ty_global=>ty_ae_src_info,
 
     "! <p class="shorttext synchronized" lang="en">Retrieves refs for single fullname</p>
     get_refs_by_fullname

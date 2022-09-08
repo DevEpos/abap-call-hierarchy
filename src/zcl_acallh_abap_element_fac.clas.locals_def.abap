@@ -6,7 +6,7 @@ INTERFACE lif_intfm_source_pos_reader.
   METHODS:
     determine_source_pos
       RETURNING
-        VALUE(result) TYPE zif_acallh_ty_global=>ty_cu_src_info.
+        VALUE(result) TYPE zif_acallh_ty_global=>ty_ae_src_info.
 ENDINTERFACE.
 
 CLASS lcl_intfm_src_pos_read_fac DEFINITION.
@@ -67,7 +67,7 @@ CLASS lcl_intfm_src_pos_reader_base DEFINITION ABSTRACT.
       ref_method_name   TYPE seocpdname,
       encl_method_name  TYPE seocpdname,
       include           TYPE progname,
-      resolved_src_info TYPE zif_acallh_ty_global=>ty_cu_src_info,
+      resolved_src_info TYPE zif_acallh_ty_global=>ty_ae_src_info,
       source_code       TYPE string_table,
       source_position   TYPE zif_acallh_ty_global=>ty_source_position.
 

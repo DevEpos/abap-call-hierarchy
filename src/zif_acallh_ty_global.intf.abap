@@ -3,7 +3,8 @@ INTERFACE zif_acallh_ty_global
   PUBLIC .
 
   TYPES:
-    ty_visibility TYPE c LENGTH 15,
+    ty_visibility        TYPE c LENGTH 15,
+    ty_method_impl_state TYPE c LENGTH 1,
     "! Workbench object name
     BEGIN OF ty_wb_object_name,
       "! Name in TADIR
@@ -23,20 +24,27 @@ INTERFACE zif_acallh_ty_global
       column TYPE i,
     END OF ty_source_position,
 
-    "! Source information of compilation unit
-    BEGIN OF ty_cu_src_info,
+    BEGIN OF ty_adt_uri_info,
+      uri             TYPE string,
+      main_prog       TYPE program,
+      include         TYPE program,
+      source_position TYPE ty_source_position,
+      trobjtype       TYPE trobjtype,
+    END OF ty_adt_uri_info,
+
+    "! Source information of ABAP element
+    BEGIN OF ty_ae_src_info,
       main_prog TYPE progname,
       include   TYPE progname,
       start_pos TYPE ty_source_position,
       end_pos   TYPE ty_source_position,
-    END OF ty_cu_src_info,
+    END OF ty_ae_src_info,
 
     BEGIN OF ty_ris_data_request,
       "! Original RIS data request
       orig_request      TYPE ris_s_adt_data_request,
       uri               TYPE string,
       source_pos_of_uri TYPE ty_source_position,
-      is_uri_in_ccimp   TYPE abap_bool,
     END OF ty_ris_data_request,
 
     BEGIN OF ty_fullname_part,
@@ -49,6 +57,9 @@ INTERFACE zif_acallh_ty_global
     ty_call_positions TYPE STANDARD TABLE OF ty_source_position WITH EMPTY KEY,
 
     BEGIN OF ty_method_properties,
+      name           TYPE abap_methname,
+      encl_type      TYPE trobjtype,
+      alias_for      TYPE abap_methname,
       is_final       TYPE abap_bool,
       is_abstract    TYPE abap_bool,
       is_alias       TYPE abap_bool,
@@ -57,9 +68,10 @@ INTERFACE zif_acallh_ty_global
       is_constructor TYPE abap_bool,
       is_static      TYPE abap_bool,
       visibility     TYPE ty_visibility,
+      impl_state     TYPE ty_method_impl_state,
     END OF ty_method_properties,
 
-    BEGIN OF ty_compilation_unit,
+    BEGIN OF ty_abap_element,
       legacy_type           TYPE seu_stype,
       adt_type              TYPE string,
       tag                   TYPE scr_tag,
@@ -77,7 +89,6 @@ INTERFACE zif_acallh_ty_global
       parent_main_program   TYPE progname,
       main_program          TYPE progname,
       call_positions        TYPE ty_call_positions,
-    END OF ty_compilation_unit.
+    END OF ty_abap_element.
 
 ENDINTERFACE.
-
