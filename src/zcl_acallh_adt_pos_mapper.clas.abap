@@ -20,16 +20,15 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
     DATA:
       compiler TYPE REF TO zif_acallh_abap_compiler.
 
-    METHODS:
-      create_fullname_from_src
-        IMPORTING
-          uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
-        EXPORTING
-          fullname         TYPE string
-          compiler_ref     TYPE scr_ref
-        RAISING
-          cx_adt_uri_mapping
-          cx_ris_position,
+    METHODS: create_fullname_from_src
+      IMPORTING
+        uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
+      EXPORTING
+        fullname         TYPE string
+        compiler_ref     TYPE scr_ref
+      RAISING
+        cx_adt_uri_mapping
+        cx_ris_position,
       map_fullname_to_abap_elem
         IMPORTING
           fullname      TYPE string
@@ -52,13 +51,6 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
         IMPORTING
           uri          TYPE string
           element_info TYPE REF TO zif_acallh_ty_global=>ty_abap_element
-        RAISING
-          zcx_acallh_exception,
-      map_uri_to_abap_element
-        IMPORTING
-          uri           TYPE string
-        RETURNING
-          VALUE(result) TYPE zif_acallh_ty_global=>ty_abap_element
         RAISING
           zcx_acallh_exception,
       set_compiler
@@ -85,12 +77,6 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
 
 
   METHOD zif_acallh_adt_pos_mapper~map_uri_to_abap_element.
-    result = map_uri_to_abap_element( uri ).
-  ENDMETHOD.
-
-
-  METHOD map_uri_to_abap_element.
-
     CALL FUNCTION 'RS_WORKING_AREA_INIT'.
 
     TRY.
@@ -151,8 +137,6 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
           EXPORTING
             previous = error.
     ENDTRY.
-
-
   ENDMETHOD.
 
 

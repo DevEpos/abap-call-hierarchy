@@ -10,11 +10,13 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
         RETURNING
           VALUE(result) TYPE REF TO zif_acallh_call_hierarchy_srv,
       "! <p class="shorttext synchronized" lang="en">Retrieves compilation unit at URI</p>
-      get_abap_element_From_uri
+      get_abap_element_from_uri
         IMPORTING
           uri           TYPE string
         RETURNING
-          VALUE(result) TYPE REF TO zif_acallh_abap_element.
+          VALUE(result) TYPE REF TO zif_acallh_abap_element
+        RAISING
+          zcx_acallh_exception.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -35,13 +37,9 @@ ENDCLASS.
 
 CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
 
-  METHOD get_abap_element_From_uri.
-    TRY.
-        DATA(element_info) = zcl_acallh_adt_pos_mapper=>create( )->map_uri_to_abap_element( uri ).
-        result = zcl_acallh_abap_element_fac=>get_instance( )->create_abap_element( element_info = element_info ).
-      CATCH cx_ris_exception zcx_acallh_exception.
-        "handle exception
-    ENDTRY.
+  METHOD get_abap_element_from_uri.
+    DATA(element_info) = zcl_acallh_adt_pos_mapper=>create( )->map_uri_to_abap_element( uri ).
+    result = zcl_acallh_abap_element_fac=>get_instance( )->create_abap_element( element_info = element_info ).
   ENDMETHOD.
 
 

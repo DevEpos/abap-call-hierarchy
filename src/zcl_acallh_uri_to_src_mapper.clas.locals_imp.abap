@@ -70,6 +70,7 @@ CLASS lcl_class_uri_mapper IMPLEMENTATION.
       DATA(clif_pos_converter) = cl_oo_source_pos_converter=>create( clif_key = VALUE #( clsname = classname ) source = clif_source ).
       DATA(uri_src_pos) = zcl_acallh_adt_uri_util=>get_uri_source_start_pos( uri ).
       TRY.
+
           DATA(include_pos) = clif_pos_converter->get_include_position( uri_src_pos ).
           result-include = include_pos-include.
           result-source_position = include_pos-source_position.

@@ -70,11 +70,11 @@
         </tt:cond>
 
         <!-- add information about method propertis -->
-        <!--<tt:cond check="not-initial($ref.method_props)">-->
+        <tt:cond check="not-initial($ref.method_props.visibility)">
           <tt:apply name="methodProperties">
             <tt:with-root name="method_props" ref="$ref.method_props" />
           </tt:apply>
-        <!--</tt:cond>-->
+        </tt:cond>
       </hierarchy:entry>
 
     </tt:loop>

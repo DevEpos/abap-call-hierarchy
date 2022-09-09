@@ -17,6 +17,7 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
     TYPES:
       BEGIN OF ty_abap_element_info_by_line,
         line TYPE i,
+        col type i,
         ref  TYPE REF TO zif_acallh_abap_element,
       END OF ty_abap_element_info_by_line.
 
@@ -28,7 +29,8 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
       abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element,
       refs_for_range    TYPE scr_names_tags_grades,
       called_include    TYPE program,
-      compiler          TYPE REF TO zif_acallh_abap_compiler.
+      compiler          TYPE REF TO zif_acallh_abap_compiler,
+      descr_reader      TYPE REF TO zif_acallh_elem_descr_reader.
 
     METHODS:
       get_full_names_in_range,
@@ -70,22 +72,7 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
         CHANGING
           abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element
         RETURNING
-          VALUE(result)     TYPE seu_stype,
-      get_method_description
-        IMPORTING
-          elem_info     TYPE zif_acallh_ty_global=>ty_abap_element
-        RETURNING
-          VALUE(result) TYPE string,
-      get_description
-        IMPORTING
-          elem_info     TYPE zif_acallh_ty_global=>ty_abap_element
-        RETURNING
-          VALUE(result) TYPE string,
-      get_function_description
-        IMPORTING
-          elem_info     TYPE zif_acallh_ty_global=>ty_abap_element
-        RETURNING
-          VALUE(result) TYPE string.
+          VALUE(result)     TYPE seu_stype.
 ENDCLASS.
 
 
@@ -95,6 +82,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD constructor.
     ASSERT abap_elem_factory IS BOUND.
     me->factory = abap_elem_factory.
+    descr_reader = zcl_acallh_elem_descr_reader=>get_instance( ).
   ENDMETHOD.
 
 
@@ -130,7 +118,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
   METHOD create_abap_elements_from_refs.
 
-    DATA sorted_comp_units TYPE SORTED TABLE OF ty_abap_element_info_by_line WITH NON-UNIQUE KEY line.
+    DATA sorted_comp_units TYPE SORTED TABLE OF ty_abap_element_info_by_line WITH NON-UNIQUE KEY line col.
 
     LOOP AT refs_for_range ASSIGNING FIELD-SYMBOL(<ref>).
 
@@ -138,7 +126,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
       CHECK direct_refs IS NOT INITIAL.
 
       DATA(call_positions) = get_call_positions( direct_refs ).
-      DATA(line_of_first_occ) = call_positions[ 1 ]-line.
+      data(first_call_pos) = call_positions[ 1 ].
 
       DATA(original_full_name) = <ref>-full_name.
       IF <ref>-tag = cl_abap_compiler=>tag_method.
@@ -147,11 +135,12 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
       TRY.
           INSERT VALUE #(
-            line = line_of_first_occ
+            line = first_call_pos-line
+            col  = first_call_pos-column
             ref  = create_abap_element(
               direct_ref           = direct_refs[ 1 ]
               full_name            = original_full_name
-              line_of_first_occ    = line_of_first_occ
+              line_of_first_occ    = first_call_pos-line
               call_positions       = call_positions ) ) INTO TABLE sorted_comp_units.
         CATCH zcx_acallh_exception.
       ENDTRY.
@@ -175,24 +164,10 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
       call_positions      = call_positions
       parent_main_program = abap_element_info-main_program ).
 
-    fill_legacy_type(
-      EXPORTING
-        full_name         = full_name "direct_ref_elem_info->fullname
-      CHANGING
-        abap_element_info = new_elem_info ).
-
-    IF new_elem_info-legacy_type IS INITIAL.
-      RAISE EXCEPTION TYPE zcx_acallh_exception
-        EXPORTING
-          text = |Legacy type could not be determined for { full_name }|.
-    ENDIF.
-
     IF direct_ref-tag = cl_abap_compiler=>tag_method.
       new_elem_info-method_props = zcl_acallh_method_info_reader=>get_instance( )->read_properties( full_name = full_name ).
       new_elem_info-encl_object_type = new_elem_info-method_props-encl_type.
     ENDIF.
-
-    new_elem_info-description = get_description( new_elem_info ).
 
     result = factory->create_abap_element( new_elem_info ).
 
@@ -279,56 +254,10 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
         abap_element_info-encl_obj_display_name = abap_element_info-encl_object_name.
       ENDIF.
     ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_form.
+      abap_element_info-legacy_type = swbm_c_type_prg_subroutine.
+    ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_function.
       abap_element_info-legacy_type = swbm_c_type_function.
     ENDIF.
-  ENDMETHOD.
-
-
-  METHOD get_description.
-
-    CASE elem_info-tag.
-
-      WHEN cl_abap_compiler=>tag_method.
-        result = get_method_description( elem_info ).
-
-      WHEN cl_abap_compiler=>tag_function.
-        result = get_function_description( elem_info ).
-    ENDCASE.
-  ENDMETHOD.
-
-
-  METHOD get_method_description.
-    DATA: class_name   TYPE classname,
-          method_parts TYPE string_table,
-          method_name  TYPE seocmpname.
-
-    IF elem_info-legacy_type = swbm_c_type_cls_mtd_impl.
-      IF elem_info-method_props-name CS '~'.
-        SPLIT elem_info-method_props-name AT '~' INTO TABLE method_parts.
-        class_name = method_parts[ 1 ].
-        method_name = method_parts[ 2 ].
-      ELSE.
-        class_name = elem_info-encl_object_name.
-        method_name = elem_info-method_props-name.
-      ENDIF.
-      SELECT SINGLE descript
-        FROM seocompotx
-        WHERE clsname = @class_name
-          AND cmpname = @method_name
-          AND langu = @sy-langu
-        INTO @result.
-    ENDIF.
-  ENDMETHOD.
-
-
-  METHOD get_function_description.
-    DATA(func_name) = CONV funcname( elem_info-object_name ).
-
-    SELECT SINGLE stext
-      FROM tftit
-      WHERE funcname = @func_name
-        AND spras = @sy-langu
-      INTO @result.
   ENDMETHOD.
 
 ENDCLASS.

@@ -37,9 +37,14 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
       mandatory  = abap_true
       request    = request ).
 
-    DATA(root_comp_unit) = zcl_acallh_call_hierarchy=>get_abap_element_From_uri( uri ).
-    IF root_comp_unit IS NOT INITIAL.
-      hierarchy_result = create_result( root_comp_unit ).
+    TRY.
+        DATA(root_element) = zcl_acallh_call_hierarchy=>get_abap_element_from_uri( uri ).
+      CATCH zcx_acallh_exception.
+        response->set_status( cl_rest_status_code=>gc_success_no_content ).
+        RETURN.
+    ENDTRY.
+    IF root_element IS NOT INITIAL.
+      hierarchy_result = create_result( root_element ).
       response->set_body_data(
         content_handler = zcl_acallh_ch_factory=>create_call_hier_result_ch( )
         data            = hierarchy_result ).
