@@ -134,7 +134,7 @@ ENDCLASS.
 CLASS lcl_prog_uri_mapper IMPLEMENTATION.
 
   METHOD constructor.
-
+    me->uri = uri.
   ENDMETHOD.
 
 
