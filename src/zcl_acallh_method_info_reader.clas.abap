@@ -120,13 +120,13 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
     IF type_descr IS INITIAL.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
-          text = ||.
+          text = |Type descriptor for method tag could not be determined|.
     ENDIF.
 
     IF type_descr->kind <> cl_abap_typedescr=>kind_intf AND type_descr->kind <> cl_abap_typedescr=>kind_class.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
-          text = ||.
+          text = |Non interface/class type for method tag detected|.
     ENDIF.
 
     result = CAST #( type_descr ).
