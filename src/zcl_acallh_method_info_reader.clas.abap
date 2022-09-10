@@ -14,7 +14,10 @@ CLASS zcl_acallh_method_info_reader DEFINITION
   PRIVATE SECTION.
     CONSTANTS:
       c_class_constructor_name TYPE string VALUE 'CLASS_CONSTRUCTOR' ##NO_TEXT,
-      c_constructor_name       TYPE string VALUE 'CONSTRUCTOR' ##NO_TEXT.
+      c_constructor_name       TYPE string VALUE 'CONSTRUCTOR' ##NO_TEXT,
+      c_rtti_intf_type         TYPE string VALUE '\INTERFACE=' ##NO_TEXT,
+      c_rtti_class_type        TYPE string VALUE '\CLASS=' ##NO_TEXT,
+      c_rtti_progr_type        TYPE string VALUE '\PROGRAM=' ##NO_TEXT.
 
     CLASS-DATA:
       instance TYPE REF TO zif_acallh_method_info_reader.
@@ -32,6 +35,11 @@ CLASS zcl_acallh_method_info_reader DEFINITION
           VALUE(result)  TYPE REF TO cl_abap_objectdescr
         RAISING
           zcx_acallh_exception,
+      get_possible_rtti_type_names
+        IMPORTING
+          full_name_info TYPE REF TO if_ris_abap_fullname
+        RETURNING
+          VALUE(result)  TYPE string_table,
       fill_method_properties
         IMPORTING
           method_name   TYPE abap_methname
@@ -95,19 +103,26 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
   METHOD get_type_descr.
     DATA type_descr TYPE REF TO cl_abap_typedescr.
 
-    cl_abap_typedescr=>describe_by_name(
-      EXPORTING
-        p_name         = full_name_info->get_rtti_class_type( )
-      RECEIVING
-        p_descr_ref    = type_descr
-      EXCEPTIONS
-        type_not_found = 1
-        OTHERS         = 2 ).
-    IF sy-subrc <> 0.
+    LOOP AT get_possible_rtti_type_names( full_name_info ) INTO DATA(rtti_name).
+      cl_abap_typedescr=>describe_by_name(
+        EXPORTING
+          p_name         = rtti_name
+        RECEIVING
+          p_descr_ref    = type_descr
+        EXCEPTIONS
+          type_not_found = 1
+          OTHERS         = 2 ).
+      IF sy-subrc = 0.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+
+    IF type_descr IS INITIAL.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
           text = ||.
     ENDIF.
+
     IF type_descr->kind <> cl_abap_typedescr=>kind_intf AND type_descr->kind <> cl_abap_typedescr=>kind_class.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
@@ -157,6 +172,40 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
           text = |Method { method_name } not found in type { object_descr->absolute_name }|.
     ENDIF.
 
+  ENDMETHOD.
+
+
+  METHOD get_possible_rtti_type_names.
+    DATA class_type TYPE seoclstype.
+
+    DATA(class_name) = full_name_info->get_part_value( iv_key = cl_abap_compiler=>tag_type ).
+
+    CALL FUNCTION 'SEO_CLIF_EXISTENCE_CHECK'
+      EXPORTING
+        cifkey  = VALUE seoclskey( clsname = class_name )
+      IMPORTING
+        clstype = class_type
+      EXCEPTIONS
+        OTHERS  = 1.
+    IF sy-subrc <> 0.
+      result = VALUE #( ( |{ c_rtti_class_type }{ class_name }| )
+                        ( |{ c_rtti_intf_type }{ class_name }| ) ).
+    ELSE.
+      IF class_name IS NOT INITIAL.
+        IF class_type = seoc_clstype_class.
+          result = VALUE #( ( |{ c_rtti_class_type }{ class_name }| ) ).
+        ELSE.
+          result = VALUE #( ( |{ c_rtti_intf_type }{ class_name }| ) ).
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    DATA(program_name) = full_name_info->get_part_value( iv_key = cl_abap_compiler=>tag_program ).
+    IF program_name IS NOT INITIAL.
+      LOOP AT result ASSIGNING FIELD-SYMBOL(<possible_type>).
+        <possible_type> = |{ c_rtti_progr_type }{ program_name }{ <possible_type> }|.
+      ENDLOOP.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
