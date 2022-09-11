@@ -1,7 +1,7 @@
 ![](https://img.shields.io/badge/ABAP-v7.40sp09+-green)
 # abap-call-hierarchy
 
-ADT Backend for ABAP Call Hierarchy
+ADT Backend for eclipse plugin [ABAP Call Hierarchy](https://github.com/stockbal/abap-call-hierarchy-ui).
 
 ## Installation
 
