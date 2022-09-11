@@ -5,6 +5,12 @@ INTERFACE zif_acallh_ty_global
   TYPES:
     ty_visibility        TYPE c LENGTH 15,
     ty_method_impl_state TYPE c LENGTH 1,
+
+    BEGIN OF ty_hierarchy_api_settings,
+      use_first_intf_impl TYPE abap_bool,
+      intf_impl           TYPE string,
+    END OF ty_hierarchy_api_settings,
+
     "! Workbench object name
     BEGIN OF ty_wb_object_name,
       "! Name in TADIR

@@ -61,9 +61,14 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_acallh_abap_element~get_called_elements.
+    IF force_reset = abap_true.
+      is_called_units_determined = abap_false.
+    ENDIF.
+
     IF is_called_units_determined = abap_false.
       IF is_hierarchy_possible = abap_true.
-        called_units = hierarchy_service->determine_called_units( me ).
+        called_units = hierarchy_service->determine_called_units( abap_element = me
+                                                                  settings     = settings ).
       ENDIF.
       is_called_units_determined = abap_true.
     ENDIF.

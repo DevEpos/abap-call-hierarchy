@@ -121,4 +121,5 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
       data              = l_element_info
       hierarchy_service = zcl_acallh_call_hierarchy=>get_call_hierarchy_srv( ) ).
   ENDMETHOD.
+
 ENDCLASS.

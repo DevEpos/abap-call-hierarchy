@@ -23,16 +23,14 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
     METHODS: create_fullname_from_src
       IMPORTING
         uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
-      EXPORTING
-        fullname         TYPE string
-        compiler_ref     TYPE scr_ref
+      RETURNING
+        VALUE(result)    TYPE string
       RAISING
         cx_adt_uri_mapping
         cx_ris_position,
       map_fullname_to_abap_elem
         IMPORTING
           fullname      TYPE string
-          compiler_ref  TYPE scr_ref OPTIONAL
         RETURNING
           VALUE(result) TYPE ris_s_adt_data_request
         RAISING
@@ -45,12 +43,6 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
           element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
         CHANGING
           fullname_info TYPE REF TO if_ris_abap_fullname
-        RAISING
-          zcx_acallh_exception,
-      determine_correct_src_pos
-        IMPORTING
-          uri          TYPE string
-          element_info TYPE REF TO zif_acallh_ty_global=>ty_abap_element
         RAISING
           zcx_acallh_exception,
       set_compiler
@@ -87,12 +79,7 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
               text = |URI without positional fragment cannot be mapped|.
         ENDIF.
         set_compiler( uri_include_info-main_prog ).
-        create_fullname_from_src(
-          EXPORTING
-            uri_include_info = uri_include_info
-          IMPORTING
-            fullname         = DATA(fullname)
-            compiler_ref     = DATA(compiler_ref) ).
+        DATA(fullname) = create_fullname_from_src( uri_include_info = uri_include_info ).
 
         IF fullname IS INITIAL.
           RAISE EXCEPTION TYPE zcx_acallh_exception.
@@ -109,8 +96,7 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
         ENDIF.
 
         DATA(element_info) = CORRESPONDING zif_acallh_ty_global=>ty_abap_element(
-          map_fullname_to_abap_elem( fullname       = fullname
-                                     compiler_ref   = compiler_ref ) ).
+          map_fullname_to_abap_elem( fullname = fullname ) ).
         element_info-main_program = uri_include_info-main_prog.
         element_info-include = uri_include_info-include.
         element_info-tag = tag.
@@ -118,18 +104,11 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
         DATA(current_main_prog) = element_info-main_program.
         zcl_acallh_mainprog_resolver=>resolve_main_prog( element_info  = REF #( element_info )
                                                          ignore_filled = abap_true ).
-        IF current_main_prog <> element_info-main_program.
-          set_compiler( element_info-main_program ).
-        ENDIF.
 
         IF tag = cl_abap_compiler=>tag_method.
           fill_method_properties( EXPORTING element_info  = REF #( element_info )
                                   CHANGING  fullname_info = fullname_info ).
         ENDIF.
-
-        determine_correct_src_pos(
-          uri          = uri
-          element_info = REF #( element_info ) ).
 
         result = element_info.
       CATCH cx_adt_uri_mapping cx_ris_exception cx_ris_position INTO DATA(error).
@@ -143,20 +122,20 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
   METHOD create_fullname_from_src.
     DATA: include_source TYPE string_table.
 
-    fullname = compiler->get_full_name_for_position(
+    result = compiler->get_full_name_for_position(
       include = uri_include_info-include
       line    = uri_include_info-source_position-line
       column  = uri_include_info-source_position-column )-full_name.
 
-    IF fullname IS INITIAL AND uri_include_info-source_position-column > 1.
-      fullname = compiler->get_full_name_for_position(
+    IF result IS INITIAL AND uri_include_info-source_position-column > 1.
+      result = compiler->get_full_name_for_position(
         include = uri_include_info-include
         line    = uri_include_info-source_position-line
         column  = uri_include_info-source_position-column - 1 )-full_name.
     ENDIF.
 
     " sometimes the method name is not in the first line.
-    IF fullname IS INITIAL AND uri_include_info-include+30(2) = 'CM'.
+    IF result IS INITIAL AND uri_include_info-include+30(2) = 'CM'.
       READ REPORT uri_include_info-include INTO include_source.
 
       LOOP AT include_source ASSIGNING FIELD-SYMBOL(<source_line>) WHERE table_line CP '*method *.'.
@@ -165,7 +144,7 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
       ENDLOOP.
 
       IF sy-subrc = 0.
-        fullname = compiler->get_full_name_for_position(
+        result = compiler->get_full_name_for_position(
           include = uri_include_info-include
           line    = corrected_line
           column  = uri_include_info-source_position-column )-full_name.
@@ -186,7 +165,6 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
     CALL FUNCTION 'RS_CONV_FULLNAME_TO_CROSSREF'
       EXPORTING
         full_name              = fullname
-        compiler_ref           = compiler_ref
       IMPORTING
         i_find_obj_cls         = findtype
         i_findstrings          = findstrings
@@ -265,61 +243,6 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
     ENDIF.
 
     element_info->method_props = method_props.
-
-  ENDMETHOD.
-
-
-  METHOD determine_correct_src_pos.
-    DATA implementing_classes TYPE seor_implementing_keys.
-
-    IF element_info->tag = cl_abap_compiler=>tag_method AND
-        element_info->method_props-encl_type = zif_acallh_c_tadir_type=>interface.
-
-      CALL FUNCTION 'SEO_INTERFACE_IMPLEM_GET_ALL'
-        EXPORTING
-          intkey       = VALUE seoclskey( clsname = element_info->encl_object_name )
-        IMPORTING
-          impkeys      = implementing_classes
-        EXCEPTIONS
-          not_existing = 1
-          OTHERS       = 2.
-      IF sy-subrc = 0.
-        IF implementing_classes IS INITIAL.
-          element_info->method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
-          RETURN.
-        ELSEIF lines( implementing_classes ) > 1.
-          element_info->method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
-          RETURN.
-        ENDIF.
-
-        " determine the correct method include for the interface method
-        cl_oo_classname_service=>get_method_include(
-          EXPORTING
-            mtdkey              = VALUE #( clsname = implementing_classes[ 1 ]-clsname
-                                           cpdname = |{ element_info->encl_object_name }~{ element_info->object_name }| )
-          RECEIVING
-            result              = element_info->include
-          EXCEPTIONS
-            class_not_existing  = 1
-            method_not_existing = 2
-            OTHERS              = 3
-        ).
-        IF sy-subrc <> 0.
-          " method could be implemented not at all (default ignore) or only in a subclass
-          RETURN.
-        ENDIF.
-        element_info->source_pos_start = VALUE #( line = 1 ).
-        element_info->source_pos_end = VALUE #( line = 1000000 ).
-        element_info->main_program = cl_oo_classname_service=>get_classpool_name( implementing_classes[ 1 ]-clsname ).
-      ENDIF.
-    ELSE.
-      DATA(source_info) = compiler->get_src_by_start_end_refs( element_info->full_name ).
-      IF source_info IS NOT INITIAL.
-        element_info->source_pos_start = source_info-start_pos.
-        element_info->source_pos_end = source_info-end_pos.
-        element_info->include = source_info-include.
-      ENDIF.
-    ENDIF.
 
   ENDMETHOD.
 
