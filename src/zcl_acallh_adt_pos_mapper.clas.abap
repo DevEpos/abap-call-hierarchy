@@ -141,6 +141,7 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
 
 
   METHOD create_fullname_from_src.
+    DATA: include_source TYPE string_table.
 
     fullname = compiler->get_full_name_for_position(
       include = uri_include_info-include
@@ -152,6 +153,23 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
         include = uri_include_info-include
         line    = uri_include_info-source_position-line
         column  = uri_include_info-source_position-column - 1 )-full_name.
+    ENDIF.
+
+    " sometimes the method name is not in the first line.
+    IF fullname IS INITIAL AND uri_include_info-include+30(2) = 'CM'.
+      READ REPORT uri_include_info-include INTO include_source.
+
+      LOOP AT include_source ASSIGNING FIELD-SYMBOL(<source_line>) WHERE table_line CP '*method *.'.
+        DATA(corrected_line) = sy-tabix.
+        EXIT.
+      ENDLOOP.
+
+      IF sy-subrc = 0.
+        fullname = compiler->get_full_name_for_position(
+          include = uri_include_info-include
+          line    = corrected_line
+          column  = uri_include_info-source_position-column )-full_name.
+      ENDIF.
     ENDIF.
 
   ENDMETHOD.
@@ -275,11 +293,24 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
         ENDIF.
 
         " determine the correct method include for the interface method
+        cl_oo_classname_service=>get_method_include(
+          EXPORTING
+            mtdkey              = VALUE #( clsname = implementing_classes[ 1 ]-clsname
+                                           cpdname = |{ element_info->encl_object_name }~{ element_info->object_name }| )
+          RECEIVING
+            result              = element_info->include
+          EXCEPTIONS
+            class_not_existing  = 1
+            method_not_existing = 2
+            OTHERS              = 3
+        ).
+        IF sy-subrc <> 0.
+          " method could be implemented not at all (default ignore) or only in a subclass
+          RETURN.
+        ENDIF.
         element_info->source_pos_start = VALUE #( line = 1 ).
         element_info->source_pos_end = VALUE #( line = 1000000 ).
         element_info->main_program = cl_oo_classname_service=>get_classpool_name( implementing_classes[ 1 ]-clsname ).
-        element_info->include = cl_oo_classname_service=>get_method_include(
-          VALUE #( clsname = implementing_classes[ 1 ]-clsname cpdname = |{ element_info->encl_object_name }~{ element_info->object_name }| ) ).
       ENDIF.
     ELSE.
       DATA(source_info) = compiler->get_src_by_start_end_refs( element_info->full_name ).

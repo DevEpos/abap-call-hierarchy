@@ -69,9 +69,13 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    result = fill_method_properties(
-      method_name  = get_method_name( full_name_info )
-      object_descr = get_type_descr( full_name_info ) ).
+    TRY.
+        result = fill_method_properties(
+          method_name  = get_method_name( full_name_info )
+          object_descr = get_type_descr( full_name_info ) ).
+      CATCH zcx_acallh_exception.
+        result = VALUE #( visibility = zif_acallh_c_method_visibility=>unknown ).
+    ENDTRY.
   ENDMETHOD.
 
 
@@ -139,17 +143,17 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
 
     LOOP AT object_descr->methods ASSIGNING FIELD-SYMBOL(<method>) WHERE name = method_name.
       result = VALUE #(
-        name         = <method>-name
-        alias_for    = <method>-alias_for
-        encl_type    = COND #(
+        name           = <method>-name
+        alias_for      = <method>-alias_for
+        encl_type      = COND #(
           WHEN object_descr->kind = cl_abap_typedescr=>kind_class THEN zif_acallh_c_tadir_type=>class
           ELSE                                                         zif_acallh_c_tadir_type=>interface )
-        is_abstract  = <method>-is_abstract
-        is_redefined = <method>-is_redefined
-        is_final     = <method>-is_final
-        is_alias     = xsdbool( <method>-alias_for IS NOT INITIAL )
-        is_handler   = xsdbool( <method>-for_event IS NOT INITIAL )
-        is_static    = <method>-is_class
+        is_abstract    = <method>-is_abstract
+        is_redefined   = <method>-is_redefined
+        is_final       = <method>-is_final
+        is_alias       = xsdbool( <method>-alias_for IS NOT INITIAL )
+        is_handler     = xsdbool( <method>-for_event IS NOT INITIAL )
+        is_static      = <method>-is_class
         is_constructor = xsdbool( <method>-name = c_constructor_name OR <method>-name = c_class_constructor_name ) ).
 
       IF <method>-name = c_constructor_name.

@@ -48,6 +48,7 @@ CLASS ltcl_unit IMPLEMENTATION.
 
     exp_props = VALUE #(
       name       = 'LIF_MAP_TO_OBJREF_BROKER~GET_MAPPER'
+      encl_type  = 'CLAS'
       visibility = zif_acallh_c_method_visibility=>public ).
 
     assert_equals( ).
@@ -56,8 +57,9 @@ CLASS ltcl_unit IMPLEMENTATION.
 
   METHOD non_existing_meth_in_path.
     fullname = '\TY:CL_ADT_URI_MAPPER\IN:IF_ADT_URI_MAPPER_VIT\ME:NOT_THERE'.
-    is_error_ok = abap_true.
+*    is_error_ok = abap_true.
 
+    exp_props = VALUE #( visibility = zif_acallh_c_method_visibility=>unknown ).
     assert_equals( ).
   ENDMETHOD.
 
@@ -67,6 +69,7 @@ CLASS ltcl_unit IMPLEMENTATION.
                |\\TY:LCL_LOCAL\\ME:ALIAS_FOR_RUN|.
 
     exp_props = VALUE #(
+      encl_type  = 'CLAS'
       name       = 'ALIAS_FOR_RUN'
       is_alias   = abap_true
       alias_for  = 'ZIF_ACALLH_TEST1~RUN'
@@ -80,6 +83,7 @@ CLASS ltcl_unit IMPLEMENTATION.
     fullname = `\TY:ZCL_ACALLH_TEST3\ME:ABSTRACT1`.
 
     exp_props = VALUE #(
+      encl_type   = 'CLAS'
       name        = 'ABSTRACT1'
       is_abstract = abap_true
       visibility  = zif_acallh_c_method_visibility=>protected ).
@@ -91,6 +95,7 @@ CLASS ltcl_unit IMPLEMENTATION.
     fullname = `\TY:ZCL_ACALLH_TEST3\IN:ZIF_ACALLH_TEST1\ME:RUN`.
 
     exp_props = VALUE #(
+      encl_type     = 'CLAS'
       name          = 'ZIF_ACALLH_TEST1~RUN'
       is_redefined  = abap_true
       visibility    = zif_acallh_c_method_visibility=>public ).
@@ -103,6 +108,7 @@ CLASS ltcl_unit IMPLEMENTATION.
     fullname = `\TY:ZCL_ACALLH_TEST3\ME:CONSTRUCTOR`.
 
     exp_props = VALUE #(
+      encl_type      = 'CLAS'
       name           = 'CONSTRUCTOR'
       is_constructor = abap_true
       visibility     = zif_acallh_c_method_visibility=>private ).
@@ -115,6 +121,7 @@ CLASS ltcl_unit IMPLEMENTATION.
     fullname = `\TY:ZCL_ACALLH_TEST3\ME:CLASS_CONSTRUCTOR`.
 
     exp_props = VALUE #(
+      encl_type      = 'CLAS'
       name           = 'CLASS_CONSTRUCTOR'
       is_constructor = abap_true
       is_static      = abap_true

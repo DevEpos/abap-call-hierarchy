@@ -85,6 +85,8 @@ CLASS lcl_class_uri_mapper IMPLEMENTATION.
         result-include = cl_oo_classname_service=>get_ccdef_name( classname ).
       ELSEIF includename = 'implementations'.
         result-include = cl_oo_classname_service=>get_ccimp_name( classname ).
+      ELSEIF includename = 'testclasses'.
+        result-include = cl_oo_classname_service=>get_ccau_name( classname ).
       ENDIF.
     ENDIF.
 

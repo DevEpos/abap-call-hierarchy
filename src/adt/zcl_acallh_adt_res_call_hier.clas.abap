@@ -62,7 +62,7 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
     result = VALUE #(
       origin_type             = root_comp_unit->element_info-adt_type
       origin_object_name      = root_comp_unit->element_info-object_name
-      origin_encl_object_name = root_comp_unit->element_info-encl_object_name
+      origin_encl_object_name = root_comp_unit->element_info-encl_obj_display_name
       entries                 = VALUE #(
       ( object_ref            = VALUE zif_acallh_ty_adt=>ty_adt_obj_ref(
           uri          = root_uri

@@ -67,6 +67,7 @@ INTERFACE zif_acallh_ty_global
       is_handler     TYPE abap_bool,
       is_constructor TYPE abap_bool,
       is_static      TYPE abap_bool,
+      is_test_method TYPE abap_bool,
       visibility     TYPE ty_visibility,
       impl_state     TYPE ty_method_impl_state,
     END OF ty_method_properties,

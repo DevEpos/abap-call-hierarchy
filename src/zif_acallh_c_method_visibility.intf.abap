@@ -5,6 +5,7 @@ INTERFACE zif_acallh_c_method_visibility
   CONSTANTS:
     public    TYPE zif_acallh_ty_global=>ty_visibility VALUE 'public',
     protected TYPE zif_acallh_ty_global=>ty_visibility VALUE 'protected',
-    private   TYPE zif_acallh_ty_global=>ty_visibility VALUE 'private'.
+    private   TYPE zif_acallh_ty_global=>ty_visibility VALUE 'private',
+    unknown   TYPE zif_acallh_ty_global=>ty_visibility VALUE 'unknown'.
 
 ENDINTERFACE.

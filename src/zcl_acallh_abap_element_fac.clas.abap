@@ -31,53 +31,10 @@ ENDCLASS.
 
 
 
-CLASS zcl_acallh_abap_element_fac IMPLEMENTATION.
+CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
+
 
   METHOD constructor.
-  ENDMETHOD.
-
-
-  METHOD get_instance.
-    IF instance IS INITIAL.
-      instance = NEW zcl_acallh_abap_element_fac( ).
-    ENDIF.
-
-    result = instance.
-  ENDMETHOD.
-
-
-  METHOD zif_acallh_abap_element_fac~create_abap_element.
-    DATA(l_element_info) = element_info.
-    IF l_element_info-main_program IS INITIAL.
-      zcl_acallh_mainprog_resolver=>resolve_main_prog( REF #( l_element_info ) ).
-    ENDIF.
-
-    fill_missing_information( CHANGING elem_info = l_element_info ).
-    l_element_info-description = zcl_acallh_elem_descr_reader=>get_instance( )->get_description( l_element_info ).
-    l_element_info-adt_type = get_adt_type( l_element_info ).
-
-    result = NEW zcl_acallh_abap_element(
-      data              = l_element_info
-      hierarchy_service = zcl_acallh_call_hierarchy=>get_call_hierarchy_srv( ) ).
-  ENDMETHOD.
-
-
-  METHOD get_adt_type.
-    DATA tadir_type TYPE trobjtype.
-
-    CASE element_data-legacy_type.
-      WHEN zif_acallh_c_euobj_type=>form OR
-           zif_acallh_c_euobj_type=>local_impl_method.
-        tadir_type = zif_acallh_c_tadir_type=>program.
-
-      WHEN zif_acallh_c_euobj_type=>function.
-        tadir_type = zif_acallh_c_tadir_type=>function_group.
-
-      WHEN zif_acallh_c_euobj_type=>method.
-        tadir_type = zif_acallh_c_tadir_type=>class.
-    ENDCASE.
-
-    result = |{ tadir_type }/{ element_data-legacy_type }|.
   ENDMETHOD.
 
 
@@ -113,6 +70,55 @@ CLASS zcl_acallh_abap_element_fac IMPLEMENTATION.
       elem_info-legacy_type = swbm_c_type_function.
     ENDIF.
 
+    IF elem_info-object_name CS '->'.
+      DATA object_name_parts TYPE string_table.
+      SPLIT elem_info-object_name AT '->' INTO TABLE object_name_parts.
+      elem_info-object_name = object_name_parts[ 2 ].
+    ENDIF.
+
   ENDMETHOD.
 
+
+  METHOD get_adt_type.
+    DATA tadir_type TYPE trobjtype.
+
+    CASE element_data-legacy_type.
+      WHEN zif_acallh_c_euobj_type=>form OR
+           zif_acallh_c_euobj_type=>local_impl_method.
+        tadir_type = zif_acallh_c_tadir_type=>program.
+
+      WHEN zif_acallh_c_euobj_type=>function.
+        tadir_type = zif_acallh_c_tadir_type=>function_group.
+
+      WHEN zif_acallh_c_euobj_type=>method.
+        tadir_type = zif_acallh_c_tadir_type=>class.
+    ENDCASE.
+
+    result = |{ tadir_type }/{ element_data-legacy_type }|.
+  ENDMETHOD.
+
+
+  METHOD get_instance.
+    IF instance IS INITIAL.
+      instance = NEW zcl_acallh_abap_element_fac( ).
+    ENDIF.
+
+    result = instance.
+  ENDMETHOD.
+
+
+  METHOD zif_acallh_abap_element_fac~create_abap_element.
+    DATA(l_element_info) = element_info.
+    IF l_element_info-main_program IS INITIAL.
+      zcl_acallh_mainprog_resolver=>resolve_main_prog( REF #( l_element_info ) ).
+    ENDIF.
+
+    fill_missing_information( CHANGING elem_info = l_element_info ).
+    l_element_info-description = zcl_acallh_elem_descr_reader=>get_instance( )->get_description( l_element_info ).
+    l_element_info-adt_type = get_adt_type( l_element_info ).
+
+    result = NEW zcl_acallh_abap_element(
+      data              = l_element_info
+      hierarchy_service = zcl_acallh_call_hierarchy=>get_call_hierarchy_srv( ) ).
+  ENDMETHOD.
 ENDCLASS.
