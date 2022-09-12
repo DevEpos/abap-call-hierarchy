@@ -159,6 +159,7 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
         p_include           = include
         p_line_from         = start_line
         p_line_to           = end_line
+        p_create_index      = abap_true
       IMPORTING
         p_names_tags_grades = result
       EXCEPTIONS
