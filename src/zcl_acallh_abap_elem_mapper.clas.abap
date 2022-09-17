@@ -1,17 +1,17 @@
-"! <p class="shorttext synchronized" lang="en">Mapper of Positions in Source Code</p>
-CLASS zcl_acallh_adt_pos_mapper DEFINITION
+"! <p class="shorttext synchronized" lang="en">Mapper for ABAP Elements</p>
+CLASS zcl_acallh_abap_elem_mapper DEFINITION
   PUBLIC
   FINAL
   CREATE PRIVATE.
 
   PUBLIC SECTION.
-    INTERFACES zif_acallh_adt_pos_mapper.
+    INTERFACES zif_acallh_abap_elem_mapper.
 
     CLASS-METHODS:
       class_constructor,
       create
         RETURNING
-          VALUE(result) TYPE REF TO zif_acallh_adt_pos_mapper.
+          VALUE(result) TYPE REF TO zif_acallh_abap_elem_mapper.
   PROTECTED SECTION.
   PRIVATE SECTION.
     CLASS-DATA:
@@ -20,23 +20,18 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
     DATA:
       compiler TYPE REF TO zif_acallh_abap_compiler.
 
-    METHODS: create_fullname_from_src
-      IMPORTING
-        uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
-      RETURNING
-        VALUE(result)    TYPE string
-      RAISING
-        cx_adt_uri_mapping
-        cx_ris_position,
-      map_fullname_to_abap_elem
+    METHODS:
+      create_fullname_from_src
+        IMPORTING
+          uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
+        RETURNING
+          VALUE(result)    TYPE string,
+      fill_elem_info_via_crossref
         IMPORTING
           fullname      TYPE string
         RETURNING
           VALUE(result) TYPE ris_s_adt_data_request
         RAISING
-          cx_ris_exception
-          cx_ris_position
-          cx_adt_uri_mapping
           zcx_acallh_exception,
       fill_method_properties
         IMPORTING
@@ -45,14 +40,20 @@ CLASS zcl_acallh_adt_pos_mapper DEFINITION
           fullname_info TYPE REF TO if_ris_abap_fullname
         RAISING
           zcx_acallh_exception,
-      set_compiler
+      convert_fullname_to_abap_elem
         IMPORTING
-          main_prog TYPE progname.
+          main_prog     TYPE progname
+          fullname      TYPE string
+          include       TYPE progname OPTIONAL
+        RETURNING
+          VALUE(result) TYPE zif_acallh_ty_global=>ty_abap_element
+        RAISING
+          zcx_acallh_exception.
 ENDCLASS.
 
 
 
-CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
+CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
 
   METHOD class_constructor.
     relevant_legacy_types = VALUE #( sign = 'I' option = 'EQ'
@@ -64,63 +65,42 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
 
 
   METHOD create.
-    result = NEW zcl_acallh_adt_pos_mapper( ).
+    result = NEW zcl_acallh_abap_elem_mapper( ).
   ENDMETHOD.
 
 
-  METHOD zif_acallh_adt_pos_mapper~map_uri_to_abap_element.
+  METHOD zif_acallh_abap_elem_mapper~map_uri_to_abap_element.
     CALL FUNCTION 'RS_WORKING_AREA_INIT'.
 
-    TRY.
-        DATA(uri_include_info) = zcl_acallh_uri_to_src_mapper=>create( )->map_adt_uri_to_src( uri ).
-        IF uri_include_info-source_position IS INITIAL.
-          RAISE EXCEPTION TYPE zcx_acallh_exception
-            EXPORTING
-              text = |URI without positional fragment cannot be mapped|.
-        ENDIF.
-        set_compiler( uri_include_info-main_prog ).
-        DATA(fullname) = create_fullname_from_src( uri_include_info = uri_include_info ).
+    DATA(uri_include_info) = zcl_acallh_uri_to_src_mapper=>create( )->map_adt_uri_to_src( uri ).
+    IF uri_include_info-source_position IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_acallh_exception
+        EXPORTING
+          text = |URI without positional fragment cannot be mapped|.
+    ENDIF.
 
-        IF fullname IS INITIAL.
-          RAISE EXCEPTION TYPE zcx_acallh_exception.
-        ENDIF.
+    DATA(fullname) = create_fullname_from_src( uri_include_info = uri_include_info ).
 
-        DATA(fullname_info) = zcl_acallh_fullname_util=>get_info_obj( fullname ).
-        DATA(tag) = fullname_info->get_abap_fullname_tag( ).
-        IF tag <> cl_abap_compiler=>tag_method AND
-            tag <> cl_abap_compiler=>tag_function AND
-            tag <> cl_abap_compiler=>tag_form.
-          RAISE EXCEPTION TYPE zcx_acallh_exception
-            EXPORTING
-              text = |Unsupported Tag { tag } detected|.
-        ENDIF.
+    result = convert_fullname_to_abap_elem(
+      main_prog = uri_include_info-main_prog
+      include   = uri_include_info-include
+      fullname  = fullname ).
+  ENDMETHOD.
 
-        DATA(element_info) = CORRESPONDING zif_acallh_ty_global=>ty_abap_element(
-          map_fullname_to_abap_elem( fullname = fullname ) ).
-        element_info-main_program = uri_include_info-main_prog.
-        element_info-include = uri_include_info-include.
-        element_info-tag = tag.
 
-        DATA(current_main_prog) = element_info-main_program.
-        zcl_acallh_mainprog_resolver=>resolve_main_prog( element_info  = REF #( element_info )
-                                                         ignore_filled = abap_true ).
+  METHOD zif_acallh_abap_elem_mapper~map_full_name_to_abap_element.
+    CALL FUNCTION 'RS_WORKING_AREA_INIT'.
 
-        IF tag = cl_abap_compiler=>tag_method.
-          fill_method_properties( EXPORTING element_info  = REF #( element_info )
-                                  CHANGING  fullname_info = fullname_info ).
-        ENDIF.
-
-        result = element_info.
-      CATCH cx_adt_uri_mapping cx_ris_exception cx_ris_position INTO DATA(error).
-        RAISE EXCEPTION TYPE zcx_acallh_exception
-          EXPORTING
-            previous = error.
-    ENDTRY.
+    result = convert_fullname_to_abap_elem(
+      main_prog = main_prog
+      fullname  = full_name ).
   ENDMETHOD.
 
 
   METHOD create_fullname_from_src.
     DATA: include_source TYPE string_table.
+
+    compiler = zcl_acallh_abap_compiler=>get( main_prog = uri_include_info-main_prog ).
 
     result = compiler->get_full_name_for_position(
       include = uri_include_info-include
@@ -154,7 +134,7 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD map_fullname_to_abap_elem.
+  METHOD fill_elem_info_via_crossref.
 
     DATA: findstrings   TYPE rinfoobj,
           findstring    TYPE rsfind,
@@ -176,10 +156,9 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
         OTHERS                 = 3.
 
     IF findtype IS INITIAL OR sy-subrc <> 0.
-      RAISE EXCEPTION TYPE cx_ris_exception
+      RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
-          textid = cx_ris_exception=>fullname_conversion_error
-          msgv1  = fullname.
+          text = |ABAP full name { fullname } cannot be converted|.
     ENDIF.
 
     result-full_name = fullname.
@@ -247,8 +226,38 @@ CLASS zcl_acallh_adt_pos_mapper IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD set_compiler.
-    compiler = zcl_acallh_abap_compiler=>get( main_prog = main_prog ).
+  METHOD convert_fullname_to_abap_elem.
+
+    IF fullname IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_acallh_exception.
+    ENDIF.
+
+    DATA(fullname_info) = zcl_acallh_fullname_util=>get_info_obj( fullname ).
+    DATA(tag) = fullname_info->get_abap_fullname_tag( ).
+    IF tag <> cl_abap_compiler=>tag_method AND
+        tag <> cl_abap_compiler=>tag_function AND
+        tag <> cl_abap_compiler=>tag_form.
+      RAISE EXCEPTION TYPE zcx_acallh_exception
+        EXPORTING
+          text = |Unsupported Tag { tag } detected|.
+    ENDIF.
+
+    DATA(element_info) = CORRESPONDING zif_acallh_ty_global=>ty_abap_element(
+      fill_elem_info_via_crossref( fullname = fullname ) ).
+    element_info-main_program = main_prog.
+    element_info-include = include.
+    element_info-tag = tag.
+
+    DATA(current_main_prog) = element_info-main_program.
+    zcl_acallh_mainprog_resolver=>resolve_main_prog( element_info  = REF #( element_info )
+                                                     ignore_filled = abap_true ).
+
+    IF tag = cl_abap_compiler=>tag_method.
+      fill_method_properties( EXPORTING element_info  = REF #( element_info )
+                              CHANGING  fullname_info = fullname_info ).
+    ENDIF.
+
+    result = element_info.
   ENDMETHOD.
 
 ENDCLASS.

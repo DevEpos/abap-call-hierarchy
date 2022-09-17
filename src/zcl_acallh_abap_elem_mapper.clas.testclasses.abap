@@ -28,7 +28,7 @@ ENDCLASS.
 CLASS ltcl_unit IMPLEMENTATION.
 
   METHOD assert_equals.
-    data(pos_mapper) = zcl_acallh_adt_pos_mapper=>create( ).
+    data(pos_mapper) = zcl_acallh_abap_elem_mapper=>create( ).
     TRY.
         DATA(map_result) = pos_mapper->map_uri_to_abap_element( uri = uri ).
       CATCH zcx_acallh_exception INTO DATA(error).

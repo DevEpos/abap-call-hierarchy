@@ -23,6 +23,12 @@
      <LANGU>E</LANGU>
      <DESCRIPT>Returns call position URI</DESCRIPT>
     </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_ACALLH_ABAP_ELEMENT</CLSNAME>
+     <CMPNAME>SET_INCLUDE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Updates the include where the element occurs</DESCRIPT>
+    </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>
  </asx:abap>

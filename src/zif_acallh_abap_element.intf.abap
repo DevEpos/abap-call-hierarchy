@@ -22,5 +22,10 @@ INTERFACE zif_acallh_abap_element
         settings      TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings OPTIONAL
         force_reset   TYPE abap_bool OPTIONAL
       RETURNING
-        VALUE(result) TYPE ty_ref_tab.
+        VALUE(result) TYPE ty_ref_tab,
+
+    "! <p class="shorttext synchronized" lang="en">Updates the include where the element occurs</p>
+    set_include
+      IMPORTING
+        value TYPE progname.
 ENDINTERFACE.

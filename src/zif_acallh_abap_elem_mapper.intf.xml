@@ -3,16 +3,22 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOINTERF>
-    <CLSNAME>ZIF_ACALLH_ADT_POS_MAPPER</CLSNAME>
+    <CLSNAME>ZIF_ACALLH_ABAP_ELEM_MAPPER</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Mapper of positions in Source Code</DESCRIPT>
+    <DESCRIPT>Mapper for ABAP Elements</DESCRIPT>
     <EXPOSURE>2</EXPOSURE>
     <STATE>1</STATE>
     <UNICODE>X</UNICODE>
    </VSEOINTERF>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZIF_ACALLH_ADT_POS_MAPPER</CLSNAME>
+     <CLSNAME>ZIF_ACALLH_ABAP_ELEM_MAPPER</CLSNAME>
+     <CMPNAME>MAP_FULL_NAME_TO_ABAP_ELEMENT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Maps given compiler full name to sructure of ABAP element</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_ACALLH_ABAP_ELEM_MAPPER</CLSNAME>
      <CMPNAME>MAP_URI_TO_ABAP_ELEMENT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Maps given URI to sructure of ABAP element</DESCRIPT>

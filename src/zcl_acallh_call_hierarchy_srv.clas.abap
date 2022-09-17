@@ -30,7 +30,8 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
       refs_for_range    TYPE scr_names_tags_grades,
       called_include    TYPE program,
       compiler          TYPE REF TO zif_acallh_abap_compiler,
-      descr_reader      TYPE REF TO zif_acallh_elem_descr_reader.
+      descr_reader      TYPE REF TO zif_acallh_elem_descr_reader,
+      current_element   TYPE REF TO zif_acallh_abap_element.
 
     METHODS:
       get_full_names_in_range
@@ -94,6 +95,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD zif_acallh_call_hierarchy_srv~determine_called_elements.
     CHECK abap_element->element_info-main_program IS NOT INITIAL.
 
+    me->current_element = abap_element.
     abap_element_info = abap_element->element_info.
 
     get_full_names_in_range( settings ).
@@ -322,6 +324,10 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
     IF abap_element_info-include IS INITIAL OR abap_element_info-source_pos_start IS INITIAL.
       RAISE EXCEPTION TYPE zcx_acallh_exception.
+    ENDIF.
+
+    IF current_element->element_info-include IS INITIAL.
+      current_element->set_include( abap_element_info-include ).
     ENDIF.
   ENDMETHOD.
 

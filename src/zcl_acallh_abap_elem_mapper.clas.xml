@@ -3,9 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <VSEOCLASS>
-    <CLSNAME>ZCL_ACALLH_ADT_POS_MAPPER</CLSNAME>
+    <CLSNAME>ZCL_ACALLH_ABAP_ELEM_MAPPER</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>Mapper of Positions in Source Code</DESCRIPT>
+    <DESCRIPT>Mapper for ABAP Elements</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

@@ -17,20 +17,10 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
           VALUE(result) TYPE REF TO zif_acallh_abap_element
         RAISING
           zcx_acallh_exception.
-
   PROTECTED SECTION.
   PRIVATE SECTION.
     CLASS-DATA:
       hierarchy_srv TYPE REF TO zif_acallh_call_hierarchy_srv.
-
-    CLASS-METHODS:
-      map_uri_to_data_request
-        IMPORTING
-          uri           TYPE string
-        RETURNING
-          VALUE(result) TYPE ris_s_adt_data_request
-        RAISING
-          cx_ris_exception.
 ENDCLASS.
 
 
@@ -38,7 +28,7 @@ ENDCLASS.
 CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
 
   METHOD get_abap_element_from_uri.
-    DATA(element_info) = zcl_acallh_adt_pos_mapper=>create( )->map_uri_to_abap_element( uri ).
+    DATA(element_info) = zcl_acallh_abap_elem_Mapper=>create( )->map_uri_to_abap_element( uri ).
     result = zcl_acallh_abap_element_fac=>get_instance( )->create_abap_element( element_info = element_info ).
   ENDMETHOD.
 
@@ -50,18 +40,6 @@ CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
     ENDIF.
 
     result = hierarchy_srv.
-  ENDMETHOD.
-
-
-  METHOD map_uri_to_data_request.
-
-    cl_ris_adt_position_mapping=>map_uri_to_ris_data_request(
-      EXPORTING
-        iv_uri          = uri
-        it_source_code  = VALUE #( )
-      IMPORTING
-        es_data_request = result ).
-
   ENDMETHOD.
 
 ENDCLASS.
