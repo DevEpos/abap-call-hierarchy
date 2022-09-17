@@ -109,11 +109,12 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
 
   METHOD zif_acallh_abap_element_fac~create_abap_element.
     DATA(l_element_info) = element_info.
+    fill_missing_information( CHANGING elem_info = l_element_info ).
+
     IF l_element_info-main_program IS INITIAL.
       zcl_acallh_mainprog_resolver=>resolve_main_prog( REF #( l_element_info ) ).
     ENDIF.
 
-    fill_missing_information( CHANGING elem_info = l_element_info ).
     l_element_info-description = zcl_acallh_elem_descr_reader=>get_instance( )->get_description( l_element_info ).
     l_element_info-adt_type = get_adt_type( l_element_info ).
 

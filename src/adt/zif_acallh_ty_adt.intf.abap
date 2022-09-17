@@ -35,6 +35,9 @@ INTERFACE zif_acallh_ty_adt
 
     BEGIN OF ty_abap_element,
       object_ref            TYPE ty_adt_obj_ref,
+      "! Identifies the found abap element <br/>
+      "! Pattern: [main program];[full name]
+      object_identifier     TYPE string,
       "! Enclosing object name (e.g. Interface, Class, Function Group)
       encl_obj_name         TYPE string,
       encl_obj_display_name TYPE string,
@@ -45,10 +48,13 @@ INTERFACE zif_acallh_ty_adt
     ty_abap_elements TYPE STANDARD TABLE OF ty_abap_element WITH EMPTY KEY,
 
     BEGIN OF ty_call_hierarchy_result,
-      origin_type             TYPE string,
-      origin_object_name      TYPE string,
-      origin_encl_object_name TYPE string,
-      entries TYPE ty_abap_elements,
+      origin_type              TYPE string,
+      origin_object_name       TYPE string,
+      origin_encl_object_name  TYPE string,
+      "! Identifies the found abap element <br/>
+      "! Pattern: [main program];[full name]
+      origin_object_identifier TYPE string,
+      entries                  TYPE ty_abap_elements,
     END OF ty_call_hierarchy_result.
 
 ENDINTERFACE.

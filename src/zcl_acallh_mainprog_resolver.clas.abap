@@ -16,13 +16,24 @@ CLASS zcl_acallh_mainprog_resolver DEFINITION
           element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
           ignore_filled TYPE abap_bool OPTIONAL
         RAISING
+          zcx_acallh_exception,
+
+      "! <p class="shorttext synchronized" lang="en">Resolves main program from ABAP full name</p>
+      get_from_full_name
+        IMPORTING
+          full_name     TYPE string
+        RETURNING
+          VALUE(result) TYPE progname
+        RAISING
           zcx_acallh_exception.
   PROTECTED SECTION.
   PRIVATE SECTION.
     CLASS-METHODS:
-      resolve_main_prog_ff
+      get_function_main_prog
         IMPORTING
-          element_info TYPE REF TO zif_acallh_ty_global=>ty_abap_element,
+          function_name TYPE rs38l_fnam
+        RETURNING
+          VALUE(result) TYPE progname,
       resolve_main_prog_om
         IMPORTING
           ignore_filled TYPE abap_bool
@@ -39,7 +50,7 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
     CASE element_info->legacy_type.
 
       WHEN swbm_c_type_function.
-        resolve_main_prog_ff( element_info ).
+        element_info->main_program = get_function_main_prog( CONV #( element_info->object_name ) ).
         IF element_info->full_name IS INITIAL.
           element_info->full_name = |\\{ cl_abap_compiler=>tag_function }:{ element_info->object_name }|.
         ENDIF.
@@ -60,11 +71,11 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD resolve_main_prog_ff.
-    DATA(funcname) = CONV rs38l_fnam( element_info->object_name ).
+  METHOD get_function_main_prog.
+    DATA(funcname) = function_name.
     CALL FUNCTION 'FUNCTION_INCLUDE_INFO'
       IMPORTING
-        pname    = element_info->main_program
+        pname    = result
       CHANGING
         funcname = funcname
       EXCEPTIONS
@@ -112,6 +123,50 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
         ENDIF.
       ENDIF.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_from_full_name.
+    DATA class_type TYPE seoclstype.
+
+    DATA(full_name_info) = zcl_acallh_fullname_util=>get_info_obj( full_name ).
+
+    CASE full_name_info->get_abap_fullname_tag( ).
+
+      WHEN cl_abap_compiler=>tag_method.
+        full_name_info->get_all_parts( IMPORTING et_parts = DATA(all_parts) ).
+
+        DATA(first_part) = all_parts[ 1 ].
+        IF first_part-key = cl_abap_compiler=>tag_program.
+          result = first_part-value.
+        ELSE.
+          DATA(classname) = CONV classname( first_part-value ).
+
+          " check if type is class or interface
+          CALL FUNCTION 'SEO_CLIF_EXISTENCE_CHECK'
+            EXPORTING
+              cifkey  = VALUE seoclskey( clsname = classname )
+            IMPORTING
+              clstype = class_type
+            EXCEPTIONS
+              OTHERS  = 1.
+          IF sy-subrc = 0.
+            IF class_type = seoc_clstype_class.
+              result = cl_oo_classname_service=>get_classpool_name( classname ).
+            ELSE.
+              result = cl_oo_classname_service=>get_interfacepool_name( classname ).
+            ENDIF.
+          ENDIF.
+
+        ENDIF.
+
+      WHEN cl_abap_compiler=>tag_form.
+        result = full_name_info->get_first_part( )-value.
+
+      WHEN cl_abap_compiler=>tag_function.
+        result = get_function_main_prog( CONV #( full_name_info->get_first_part( )-value ) ).
+
+    ENDCASE.
   ENDMETHOD.
 
 ENDCLASS.

@@ -21,7 +21,7 @@ CLASS zcl_acallh_abap_elem_mapper DEFINITION
       compiler TYPE REF TO zif_acallh_abap_compiler.
 
     METHODS:
-      create_fullname_from_src
+      create_fullname_from_src_info
         IMPORTING
           uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
         RETURNING
@@ -79,7 +79,7 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
           text = |URI without positional fragment cannot be mapped|.
     ENDIF.
 
-    DATA(fullname) = create_fullname_from_src( uri_include_info = uri_include_info ).
+    DATA(fullname) = create_fullname_from_src_info( uri_include_info = uri_include_info ).
 
     result = convert_fullname_to_abap_elem(
       main_prog = uri_include_info-main_prog
@@ -97,7 +97,7 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD create_fullname_from_src.
+  METHOD create_fullname_from_src_info.
     DATA: include_source TYPE string_table.
 
     compiler = zcl_acallh_abap_compiler=>get( main_prog = uri_include_info-main_prog ).

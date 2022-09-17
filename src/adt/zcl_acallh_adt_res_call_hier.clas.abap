@@ -17,13 +17,32 @@ CLASS zcl_acallh_adt_res_call_hier DEFINITION
           hierarchy_settings TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings
         RETURNING
           VALUE(result)      TYPE zif_acallh_ty_adt=>ty_call_hierarchy_result,
-
+      get_path_type
+        IMPORTING
+          request       TYPE REF TO if_adt_rest_request
+        RETURNING
+          VALUE(result) TYPE string
+        RAISING
+          cx_adt_rest,
       convert_call_position
         IMPORTING
           call_position TYPE zif_acallh_ty_global=>ty_source_position
           uri           TYPE string
         RETURNING
-          VALUE(result) TYPE zif_acallh_ty_adt=>ty_call_position.
+          VALUE(result) TYPE zif_acallh_ty_adt=>ty_call_position,
+      get_root_element
+        IMPORTING
+          path          TYPE string
+          path_type     TYPE string
+        RETURNING
+          VALUE(result) TYPE REF TO zif_acallh_abap_element
+        RAISING
+          zcx_acallh_exception,
+      get_object_identifier
+        IMPORTING
+          abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element
+        RETURNING
+          VALUE(result)     TYPE string.
 ENDCLASS.
 
 
@@ -34,21 +53,25 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
     DATA: hierarchy_result   TYPE zif_acallh_ty_adt=>ty_call_hierarchy_result,
           hierarchy_settings TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings.
 
-    DATA(uri) = zcl_acallh_adt_request_util=>get_query_parameter(
-      param_name = zif_acallh_c_global=>c_call_hierarchy_params-uri
+    DATA(path) = zcl_acallh_adt_request_util=>get_query_parameter(
+      param_name = zif_acallh_c_global=>c_call_hierarchy_params-path
       mandatory  = abap_true
       request    = request ).
+
+    DATA(path_type) = get_path_type( request ).
 
     hierarchy_settings-use_first_intf_impl = zcl_acallh_adt_request_util=>get_boolean_query_parameter(
       param_name = zif_acallh_c_global=>c_call_hierarchy_params-auto_resolve_intf_method
       request    = request ).
 
     TRY.
-        DATA(root_element) = zcl_acallh_call_hierarchy=>get_abap_element_from_uri( uri ).
+        DATA(root_element) = get_root_element( path      = path
+                                               path_type = path_type ).
       CATCH zcx_acallh_exception.
         response->set_status( cl_rest_status_code=>gc_success_no_content ).
         RETURN.
     ENDTRY.
+
     IF root_element IS NOT INITIAL.
       hierarchy_result = create_result(
         root_element       = root_element
@@ -63,44 +86,65 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_path_type.
+    result = zcl_acallh_adt_request_util=>get_query_parameter(
+      param_name = zif_acallh_c_global=>c_call_hierarchy_params-path_type
+      mandatory  = abap_true
+      request    = request ).
+
+    IF result <> zif_acallh_c_global=>c_path_types-full_name AND
+        result <> zif_acallh_c_global=>c_path_types-uri.
+      RAISE EXCEPTION TYPE zcx_acallh_adt_rest
+        EXPORTING
+          text = |Value { result } of query parameter 'pathType' is not valid | &&
+                 |[{ zif_acallh_c_global=>c_path_types-full_name },{ zif_acallh_c_global=>c_path_types-uri }]|.
+    ENDIF.
+  ENDMETHOD.
+
+
   METHOD create_result.
-    DATA(called_units) = root_element->get_called_elements( settings = hierarchy_settings ).
+    DATA(called_elements) = root_element->get_called_elements( settings = hierarchy_settings ).
 
     DATA(root_uri) = root_element->get_call_position_uri( ).
-    result = VALUE #(
-      origin_type             = root_element->element_info-adt_type
-      origin_object_name      = root_element->element_info-object_name
-      origin_encl_object_name = root_element->element_info-encl_obj_display_name
-      entries                 = VALUE #(
-      ( object_ref            = VALUE zif_acallh_ty_adt=>ty_adt_obj_ref(
-          uri          = root_uri
-          name         = root_element->element_info-object_name
-          description  = root_element->element_info-description
-          type         = root_element->element_info-adt_type )
-        encl_obj_name         = root_element->element_info-encl_object_name
-        encl_obj_display_name = root_element->element_info-encl_obj_display_name
-        method_props          = root_element->element_info-method_props ) ) ).
+    DATA(root_object_identifier) = get_object_identifier( root_element->element_info ).
 
-    " fill the called units entries
-    LOOP AT called_units INTO DATA(called_unit).
+    result = VALUE #(
+      origin_type              = root_element->element_info-adt_type
+      origin_object_name       = root_element->element_info-object_name
+      origin_encl_object_name  = root_element->element_info-encl_obj_display_name
+      origin_object_identifier = root_object_identifier
+      entries                  = VALUE #(
+        ( object_ref            = VALUE zif_acallh_ty_adt=>ty_adt_obj_ref(
+            uri          = root_uri
+            name         = root_element->element_info-object_name
+            description  = root_element->element_info-description
+            type         = root_element->element_info-adt_type )
+          object_identifier     = root_object_identifier
+          encl_obj_name         = root_element->element_info-encl_object_name
+          encl_obj_display_name = root_element->element_info-encl_obj_display_name
+          method_props          = root_element->element_info-method_props ) ) ).
+
+    LOOP AT called_elements INTO DATA(called_element).
       DATA(call_positions) = VALUE zif_acallh_ty_adt=>ty_call_positions(
-        FOR <callpos> IN called_unit->element_info-call_positions
+        FOR <callpos> IN called_element->element_info-call_positions
         ( convert_call_position(
             call_position = <callpos>
-            uri           = called_unit->get_call_position_uri( <callpos> ) ) ) ).
+            uri           = called_element->get_call_position_uri( <callpos> ) ) ) ).
 
       result-entries = VALUE #( BASE result-entries
         ( object_ref            = VALUE zif_acallh_ty_adt=>ty_adt_obj_ref(
             uri          = call_positions[ 1 ]-uri
             parent_uri   = root_uri
-            name         = called_unit->element_info-object_name
-            description  = called_unit->element_info-description
-            type         = called_unit->element_info-adt_type )
-          encl_obj_name         = called_unit->element_info-encl_object_name
-          encl_obj_display_name = called_unit->element_info-encl_obj_display_name
-          method_props          = called_unit->element_info-method_props
+            name         = called_element->element_info-object_name
+            description  = called_element->element_info-description
+            type         = called_element->element_info-adt_type )
+          object_identifier     = get_object_identifier( called_element->element_info )
+          encl_obj_name         = called_element->element_info-encl_object_name
+          encl_obj_display_name = called_element->element_info-encl_obj_display_name
+          method_props          = called_element->element_info-method_props
           call_positions        = call_positions ) ).
     ENDLOOP.
+
   ENDMETHOD.
 
 
@@ -109,6 +153,20 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
     result = CORRESPONDING #( call_position ).
     result-uri = uri.
     result-line = pos_in_uri-line.
+  ENDMETHOD.
+
+
+  METHOD get_root_element.
+    IF path_type = zif_acallh_c_global=>c_path_types-uri.
+      result = zcl_acallh_call_hierarchy=>get_abap_element_from_uri( path ).
+    ELSE.
+      result = zcl_acallh_call_hierarchy=>get_abap_elem_from_full_name( path ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_object_identifier.
+    result = abap_element_info-full_name.
   ENDMETHOD.
 
 ENDCLASS.

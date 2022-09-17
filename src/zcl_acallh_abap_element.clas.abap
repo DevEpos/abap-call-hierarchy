@@ -39,10 +39,9 @@ CLASS zcl_acallh_abap_element DEFINITION
 
     DATA:
       hierarchy_service          TYPE REF TO zif_acallh_call_hierarchy_srv,
-
       is_hierarchy_possible      TYPE abap_bool,
       is_called_units_determined TYPE abap_bool,
-      called_units               TYPE zif_acallh_abap_element=>ty_ref_tab.
+      called_elements            TYPE zif_acallh_abap_element=>ty_ref_tab.
 ENDCLASS.
 
 
@@ -60,6 +59,11 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
     is_hierarchy_possible = value.
   ENDMETHOD.
 
+
+  METHOD zif_acallh_abap_element~set_include.
+    element_info-include = value.
+  ENDMETHOD.
+
   METHOD zif_acallh_abap_element~get_called_elements.
     IF force_reset = abap_true.
       is_called_units_determined = abap_false.
@@ -67,13 +71,13 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
 
     IF is_called_units_determined = abap_false.
       IF is_hierarchy_possible = abap_true.
-        called_units = hierarchy_service->determine_called_Elements( abap_element = me
-                                                                  settings     = settings ).
+        called_elements = hierarchy_service->determine_called_elements( abap_element = me
+                                                                        settings     = settings ).
       ENDIF.
       is_called_units_determined = abap_true.
     ENDIF.
 
-    result = called_units.
+    result = called_elements.
   ENDMETHOD.
 
   METHOD zif_acallh_abap_element~get_call_position_uri.

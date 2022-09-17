@@ -73,7 +73,8 @@ CLASS zcl_acallh_adt_disc_app IMPLEMENTATION.
       category_term   = 'callHierarchy' ).
 
     DATA(template) = |{ c_call_hierarchy_uri }| &&
-                     |\{?{ zif_acallh_c_global=>c_call_hierarchy_params-uri }*\}| &&
+                     |\{?{ zif_acallh_c_global=>c_call_hierarchy_params-path }*\}| &&
+                     |\{&{ zif_acallh_c_global=>c_call_hierarchy_params-path_type }*\}| &&
                      |\{&{ zif_acallh_c_global=>c_call_hierarchy_params-auto_resolve_intf_method }*\}| &&
                      |\{&{ zif_acallh_c_global=>c_call_hierarchy_params-intf_method_implementation }*\}|.
 

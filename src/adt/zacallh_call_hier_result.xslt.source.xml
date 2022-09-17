@@ -30,6 +30,10 @@
         <tt:attribute name="hierarchy:originEnclObjectName" value-ref="hierarchy_result.origin_encl_object_name" />
       </tt:cond>
 
+      <tt:cond check="not-initial(hierarchy_result.origin_object_identifier)">
+        <tt:attribute name="hierarchy:originObjectIdentifier" value-ref="hierarchy_result.origin_object_identifier" />
+      </tt:cond>
+
       <tt:apply name="entries">
         <tt:with-root name="entries" ref="hierarchy_result.entries"/>
       </tt:apply>
@@ -53,6 +57,10 @@
 
         <tt:cond check="not-initial($ref.encl_obj_display_name)">
           <tt:attribute name="hierarchy:enclObjDisplayName" value-ref="$ref.encl_obj_display_name" />
+        </tt:cond>
+
+        <tt:cond check="not-initial($ref.object_identifier)">
+          <tt:attribute name="hierarchy:objectIdentifier" value-ref="$ref.object_identifier" />
         </tt:cond>
 
         <!-- add main information about adt -->
