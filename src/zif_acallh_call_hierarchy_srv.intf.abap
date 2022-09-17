@@ -4,7 +4,7 @@ INTERFACE zif_acallh_call_hierarchy_srv
 
   METHODS:
     "! <p class="shorttext synchronized" lang="en">Determines the called units of the given comp. unit</p>
-    determine_called_units
+    determine_called_Elements
       IMPORTING
         abap_element  TYPE REF TO zif_acallh_abap_element
         settings      TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings OPTIONAL

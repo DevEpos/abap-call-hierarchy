@@ -53,8 +53,6 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
         CHANGING
           full_name TYPE string,
       get_direct_references
-        IMPORTING
-          full_name     TYPE string
         RETURNING
           VALUE(result) TYPE scr_refs,
       get_call_positions
@@ -93,7 +91,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD zif_acallh_call_hierarchy_srv~determine_called_units.
+  METHOD zif_acallh_call_hierarchy_srv~determine_called_elements.
     CHECK abap_element->element_info-main_program IS NOT INITIAL.
 
     abap_element_info = abap_element->element_info.
@@ -112,16 +110,15 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
     IF abap_element_info-source_pos_start IS INITIAL.
       TRY.
-          data(old_main_prog) = abap_element_info-main_program.
+          DATA(old_main_prog) = abap_element_info-main_program.
           determine_correct_src_pos( settings ).
-          if abap_element_info-main_program <> old_main_prog.
+          IF abap_element_info-main_program <> old_main_prog.
             compiler = zcl_acallh_abap_compiler=>get( main_prog = abap_element_info-main_program ).
           ENDIF.
         CATCH zcx_acallh_exception.
           RETURN.
       ENDTRY.
     ENDIF.
-
 
     refs_for_range = compiler->get_refs_in_range(
       include    = abap_element_info-include
@@ -132,38 +129,29 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
   METHOD create_abap_elements_from_refs.
 
-    DATA sorted_comp_units TYPE SORTED TABLE OF ty_abap_element_info_by_line WITH NON-UNIQUE KEY line col.
+    DATA(direct_refs) = get_direct_references( ).
 
-    LOOP AT refs_for_range ASSIGNING FIELD-SYMBOL(<ref>).
-
-      DATA(direct_refs) = get_direct_references( <ref>-full_name ).
-      CHECK direct_refs IS NOT INITIAL.
-
-      DATA(call_positions) = get_call_positions( direct_refs ).
+    LOOP AT direct_refs ASSIGNING FIELD-SYMBOL(<direct_ref>) GROUP BY <direct_ref>-full_name.
+      DATA(direct_refs_for_fullname) = VALUE scr_refs( FOR <ref> IN GROUP <direct_ref> ( <ref> ) ).
+      DATA(call_positions) = get_call_positions( direct_refs_for_fullname ).
       DATA(first_call_pos) = call_positions[ 1 ].
 
-      DATA(original_full_name) = <ref>-full_name.
-      IF <ref>-tag = cl_abap_compiler=>tag_method.
+      DATA(original_full_name) = <direct_ref>-full_name.
+      IF <direct_ref>-tag = cl_abap_compiler=>tag_method.
         adjust_meth_full_name( CHANGING full_name = original_full_name ).
       ENDIF.
 
       TRY.
-          INSERT VALUE #(
-            line = first_call_pos-line
-            col  = first_call_pos-column
-            ref  = create_abap_element(
+          result = VALUE #( BASE result
+          ( create_abap_element(
               direct_ref           = direct_refs[ 1 ]
               full_name            = original_full_name
               line_of_first_occ    = first_call_pos-line
-              call_positions       = call_positions ) ) INTO TABLE sorted_comp_units.
+              call_positions       = call_positions ) ) ).
         CATCH zcx_acallh_exception.
       ENDTRY.
 
-      DELETE refs_for_range.
-
     ENDLOOP.
-
-    result = VALUE #( FOR <comp_unit> IN sorted_comp_units ( <comp_unit>-ref ) ).
 
   ENDMETHOD.
 
@@ -207,8 +195,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
   METHOD get_direct_references.
     result = compiler->get_direct_references(
-      include    = abap_element_info-include
-      full_name  = full_name
+      full_names = VALUE #( FOR <ref> IN refs_for_range ( <ref>-full_name ) )
       start_line = abap_element_info-source_pos_start-line + 1
       end_line   = abap_element_info-source_pos_end-line ).
 
@@ -297,7 +284,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
             abap_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
             RETURN.
           ELSEIF lines( implementing_classes ) > 1.
-            abap_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
+            abap_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>multiple_implementations.
             RETURN.
           ENDIF.
 

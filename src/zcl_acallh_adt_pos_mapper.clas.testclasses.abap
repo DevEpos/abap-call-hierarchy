@@ -108,8 +108,7 @@ CLASS ltcl_unit IMPLEMENTATION.
     uri = cl_oo_adt_uri_builder_class=>create_uri_for_class_include( class_name = 'ZCL_ACALLH_TEST1'
                                                                      fragment   = fragment ).
 
-    " TODO: not yet correct -> should have the single class implementing the interface in front
-    expected_fullname = '\TY:ZCL_ACALLH_TEST2\IN:ZIF_ACALLH_TEST2\ME:EXECUTE'.
+    expected_fullname = '\TY:ZIF_ACALLH_TEST2\ME:EXECUTE'.
 
     assert_equals( ).
   ENDMETHOD.

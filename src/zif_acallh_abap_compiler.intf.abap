@@ -41,11 +41,11 @@ INTERFACE zif_acallh_abap_compiler
       RETURNING
         VALUE(result) TYPE scr_names_tags_grades,
 
-    "! <p class="shorttext synchronized" lang="en">Retrieves direct references in range</p>
+    "! <p class="shorttext synchronized" lang="en">Retrieves direct references for full name(s)</p>
     get_direct_references
       IMPORTING
-        include       TYPE progname
-        full_name     TYPE string
+        full_name     TYPE string OPTIONAL
+        full_names    TYPE string_table OPTIONAL
         start_line    TYPE i
         end_line      TYPE i
       RETURNING

@@ -67,7 +67,7 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
 
     IF is_called_units_determined = abap_false.
       IF is_hierarchy_possible = abap_true.
-        called_units = hierarchy_service->determine_called_units( abap_element = me
+        called_units = hierarchy_service->determine_called_Elements( abap_element = me
                                                                   settings     = settings ).
       ENDIF.
       is_called_units_determined = abap_true.

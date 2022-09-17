@@ -15,7 +15,7 @@
      <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>
      <CMPNAME>GET_DIRECT_REFERENCES</CMPNAME>
      <LANGU>E</LANGU>
-     <DESCRIPT>Retrieves direct references in range</DESCRIPT>
+     <DESCRIPT>Retrieves direct references for full name(s)</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>

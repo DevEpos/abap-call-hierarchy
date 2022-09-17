@@ -173,21 +173,39 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
 
 
   METHOD zif_acallh_abap_compiler~get_direct_references.
+    DATA names_and_grades TYPE scr_names_grades.
+
+    IF ( full_name IS INITIAL AND
+        full_names IS INITIAL ) OR
+        ( full_name IS NOT INITIAL AND
+          full_names IS NOT INITIAL ).
+      " TODO: raise exception
+      RETURN.
+    ENDIF.
+
+    IF full_name IS NOT INITIAL.
+      names_and_grades = value #( ( full_name = full_name grade = cl_abap_compiler=>grade_direct ) ).
+    ELSEIF full_names IS NOT INITIAL.
+      names_and_grades = value #( for <full_name> in full_names
+        ( grade     = cl_abap_compiler=>grade_direct
+          full_name = <full_name> ) ).
+    ELSE.
+    ENDIF.
+
     abap_compiler->get_single_ref(
       EXPORTING
-        p_full_name = full_name
-        p_grade     = cl_abap_compiler=>grade_direct
-        p_extended  = abap_true
+        p_full_names = names_and_grades
+        p_extended   = abap_true
       IMPORTING
-        p_result    = result
+        p_result     = result
       EXCEPTIONS
-        OTHERS      = 1 ).
+        OTHERS       = 1 ).
 
     DELETE result WHERE line < start_line
                      OR line > end_line
                      OR grade <> cl_abap_compiler=>grade_direct.
 
-    SORT result BY line.
+    SORT result BY line column.
   ENDMETHOD.
 
 ENDCLASS.
