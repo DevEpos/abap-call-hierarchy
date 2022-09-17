@@ -9,7 +9,6 @@ INTERFACE zif_acallh_c_global
     END OF c_path_types,
 
     BEGIN OF c_call_hierarchy_params,
-      uri                        TYPE string VALUE 'uri',
       path                       TYPE string VALUE 'path',
       path_type                  TYPE string VALUE 'pathType',
       full_name                  TYPE string VALUE 'fullName',
