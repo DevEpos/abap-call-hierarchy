@@ -144,7 +144,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
       TRY.
           result = VALUE #( BASE result
           ( create_abap_element(
-              direct_ref           = direct_refs[ 1 ]
+              direct_ref           = direct_refs_for_fullname[ 1 ]
               full_name            = original_full_name
               line_of_first_occ    = first_call_pos-line
               call_positions       = call_positions ) ) ).
