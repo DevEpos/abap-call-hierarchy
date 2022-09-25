@@ -108,17 +108,21 @@ CLASS zcl_acallh_method_info_reader IMPLEMENTATION.
     DATA type_descr TYPE REF TO cl_abap_typedescr.
 
     LOOP AT get_possible_rtti_type_names( full_name_info ) INTO DATA(rtti_name).
-      cl_abap_typedescr=>describe_by_name(
-        EXPORTING
-          p_name         = rtti_name
-        RECEIVING
-          p_descr_ref    = type_descr
-        EXCEPTIONS
-          type_not_found = 1
-          OTHERS         = 2 ).
-      IF sy-subrc = 0.
-        EXIT.
-      ENDIF.
+      TRY.
+          cl_abap_typedescr=>describe_by_name(
+            EXPORTING
+              p_name         = rtti_name
+            RECEIVING
+              p_descr_ref    = type_descr
+            EXCEPTIONS
+              type_not_found = 1
+              OTHERS         = 2 ).
+          IF sy-subrc = 0.
+            EXIT.
+          ENDIF.
+        CATCH cx_root ##NO_HANDLER.
+          " nessecary as a class can have syntax errors and so the describe_by_name fails
+      ENDTRY.
     ENDLOOP.
 
     IF type_descr IS INITIAL.
