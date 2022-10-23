@@ -75,6 +75,7 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD zif_acallh_abap_compiler~get_src_by_start_end_refs.
     abap_compiler->get_single_ref(
       EXPORTING
@@ -102,6 +103,7 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
           column = begin_end_refs[ 2 ]-column ) ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD zif_acallh_abap_compiler~get_full_name_for_position.
     abap_compiler->get_full_name_for_position(
@@ -184,9 +186,9 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
     ENDIF.
 
     IF full_name IS NOT INITIAL.
-      names_and_grades = value #( ( full_name = full_name grade = cl_abap_compiler=>grade_direct ) ).
+      names_and_grades = VALUE #( ( full_name = full_name grade = cl_abap_compiler=>grade_direct ) ).
     ELSEIF full_names IS NOT INITIAL.
-      names_and_grades = value #( for <full_name> in full_names
+      names_and_grades = VALUE #( FOR <full_name> IN full_names
         ( grade     = cl_abap_compiler=>grade_direct
           full_name = <full_name> ) ).
     ELSE.
@@ -206,6 +208,19 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
                      OR grade <> cl_abap_compiler=>grade_direct.
 
     SORT result BY line column.
+  ENDMETHOD.
+
+
+  METHOD zif_acallh_abap_compiler~get_alias_fullname.
+    abap_compiler->get_alias_full_name(
+      EXPORTING
+        p_full_name                = full_name
+      IMPORTING
+        p_alias_full_name          = result
+      EXCEPTIONS
+        object_not_found           = 1
+        program_fatal_syntax_error = 2
+        OTHERS                     = 3 ).
   ENDMETHOD.
 
 ENDCLASS.

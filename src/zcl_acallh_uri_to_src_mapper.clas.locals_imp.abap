@@ -12,6 +12,8 @@ CLASS lcl_uri_mapper_factory IMPLEMENTATION.
       result = NEW lcl_fugr_uri_mapper( uri ).
     ELSEIF matches( val = uri regex = `^/sap/bc/adt/oo/classes/.+` ).
       result = NEW lcl_class_uri_mapper( uri ).
+    ELSEIF matches( val = uri regex = `^/sap/bc/adt/oo/interfaces/.+` ).
+      result = NEW lcl_intf_uri_mapper( uri ).
     ENDIF.
   ENDMETHOD.
 
@@ -92,6 +94,56 @@ CLASS lcl_class_uri_mapper IMPLEMENTATION.
 
   ENDMETHOD.
 
+ENDCLASS.
+
+
+CLASS lcl_intf_uri_mapper IMPLEMENTATION.
+
+  METHOD constructor.
+    me->uri = uri.
+  ENDMETHOD.
+
+
+  METHOD lif_uri_mapper~map.
+    DATA clstype TYPE seoclstype.
+
+    FIND REGEX c_intf_uri_regex IN uri
+      RESULTS DATA(match).
+
+    IF match IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(intf_name_group) = match-submatches[ 1 ].
+
+    IF intf_name_group-offset <= 0.
+      RETURN.
+    ENDIF.
+
+    result-uri = uri.
+    result-trobjtype = zif_acallh_c_tadir_type=>interface.
+
+    DATA(classname) = CONV classname(
+      to_upper(
+        cl_http_utility=>unescape_url( |{ uri+intf_name_group-offset(intf_name_group-length) }| ) ) ).
+
+    result-main_prog = cl_oo_classname_service=>get_interfacepool_name( classname ).
+    result-include = cl_oo_classname_service=>get_intfsec_name( classname ).
+
+    CALL FUNCTION 'SEO_CLIF_EXISTENCE_CHECK'
+      EXPORTING
+        cifkey        = VALUE seoclskey( clsname = classname )
+      IMPORTING
+        clstype       = clstype
+      EXCEPTIONS
+        not_specified = 1
+        not_existing  = 2
+        OTHERS        = 3.
+    IF sy-subrc <> 0 OR clstype = 0.
+      RAISE EXCEPTION TYPE zcx_acallh_exception.
+    ENDIF.
+
+  ENDMETHOD.
 
 ENDCLASS.
 

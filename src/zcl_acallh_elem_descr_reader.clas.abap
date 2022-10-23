@@ -59,7 +59,7 @@ CLASS zcl_acallh_elem_descr_reader IMPLEMENTATION.
           method_parts TYPE string_table,
           method_name  TYPE seocmpname.
 
-    IF elem_info-legacy_type = swbm_c_type_cls_mtd_impl.
+    IF elem_info-type-legacy_type = swbm_c_type_cls_mtd_impl.
       IF elem_info-method_props-name CS '~'.
         SPLIT elem_info-method_props-name AT '~' INTO TABLE method_parts.
         class_name = method_parts[ 1 ].

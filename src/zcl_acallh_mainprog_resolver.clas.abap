@@ -47,7 +47,7 @@ ENDCLASS.
 CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
 
   METHOD resolve_main_prog.
-    CASE element_info->legacy_type.
+    CASE element_info->type-legacy_type.
 
       WHEN swbm_c_type_function.
         element_info->main_program = get_function_main_prog( CONV #( element_info->object_name ) ).

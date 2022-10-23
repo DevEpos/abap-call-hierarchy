@@ -48,7 +48,7 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
     DATA(second_ref_entry) = VALUE #( ref_stack[ 2 ] OPTIONAL ).
 
     IF first_ref_entry-tag = cl_abap_compiler=>tag_type.
-      elem_info-legacy_type = swbm_c_type_cls_mtd_impl.
+      elem_info-type-legacy_type = swbm_c_type_cls_mtd_impl.
 
       elem_info-encl_object_name =
         elem_info-encl_obj_display_name = first_ref_entry-name.
@@ -56,18 +56,18 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
       elem_info-encl_object_name = first_ref_entry-name.
 
       IF second_ref_entry-tag = cl_abap_compiler=>tag_type.
-        elem_info-legacy_type = swbm_c_type_prg_class_method.
+        elem_info-type-legacy_type = swbm_c_type_prg_class_method.
 
         DATA(encl_class) = translate( val = CONV seoclsname( first_ref_entry-name ) from = '=' to = '' ).
         elem_info-encl_obj_display_name = |{ encl_class }=>{ second_ref_entry-name }|.
       ELSE.
-        elem_info-legacy_type = swbm_c_type_prg_subroutine.
+        elem_info-type-legacy_type = swbm_c_type_prg_subroutine.
         elem_info-encl_obj_display_name = elem_info-encl_object_name.
       ENDIF.
     ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_form.
-      elem_info-legacy_type = swbm_c_type_prg_subroutine.
+      elem_info-type-legacy_type = swbm_c_type_prg_subroutine.
     ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_function.
-      elem_info-legacy_type = swbm_c_type_function.
+      elem_info-type-legacy_type = swbm_c_type_function.
     ENDIF.
 
     IF elem_info-object_name CS '->'.
@@ -82,7 +82,7 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
   METHOD get_adt_type.
     DATA tadir_type TYPE trobjtype.
 
-    CASE element_data-legacy_type.
+    CASE element_data-type-legacy_type.
       WHEN zif_acallh_c_euobj_type=>form OR
            zif_acallh_c_euobj_type=>local_impl_method.
         tadir_type = zif_acallh_c_tadir_type=>program.
@@ -94,7 +94,7 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
         tadir_type = zif_acallh_c_tadir_type=>class.
     ENDCASE.
 
-    result = |{ tadir_type }/{ element_data-legacy_type }|.
+    result = |{ tadir_type }/{ element_data-type-legacy_type }|.
   ENDMETHOD.
 
 

@@ -38,6 +38,21 @@ CLASS lcl_class_uri_mapper DEFINITION.
 ENDCLASS.
 
 
+CLASS lcl_intf_uri_mapper DEFINITION.
+
+  PUBLIC SECTION.
+    INTERFACES lif_uri_mapper.
+    METHODS constructor
+      IMPORTING
+        uri TYPE string.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    DATA uri TYPE string.
+    CONSTANTS:
+      c_intf_uri_regex TYPE string VALUE `^/sap/bc/adt/oo/interfaces/([\w%]+)/source/main`.
+ENDCLASS.
+
+
 CLASS lcl_fugr_uri_mapper DEFINITION.
 
   PUBLIC SECTION.

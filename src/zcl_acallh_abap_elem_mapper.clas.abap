@@ -26,11 +26,11 @@ CLASS zcl_acallh_abap_elem_mapper DEFINITION
           uri_include_info TYPE zif_acallh_ty_global=>ty_adt_uri_info
         RETURNING
           VALUE(result)    TYPE string,
-      fill_elem_info_via_crossref
+      conv_fullname_to_abap_elem
         IMPORTING
           fullname      TYPE string
         RETURNING
-          VALUE(result) TYPE ris_s_adt_data_request
+          VALUE(result) TYPE zif_acallh_ty_global=>ty_abap_element
         RAISING
           zcx_acallh_exception,
       fill_method_properties
@@ -134,13 +134,12 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD fill_elem_info_via_crossref.
+  METHOD conv_fullname_to_abap_elem.
 
-    DATA: findstrings   TYPE rinfoobj,
-          findstring    TYPE rsfind,
-          findtype      TYPE seu_obj,
-          scope_object  TYPE rsfind,
-          scope_objects TYPE rinfoobj.
+    DATA: findstrings       TYPE rinfoobj,
+          findtype          TYPE seu_obj,
+          scope_object_type TYPE seu_obj,
+          scope_objects     TYPE rinfoobj.
 
     CALL FUNCTION 'RS_CONV_FULLNAME_TO_CROSSREF'
       EXPORTING
@@ -148,6 +147,7 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
       IMPORTING
         i_find_obj_cls         = findtype
         i_findstrings          = findstrings
+        i_scope_obj_cls        = scope_object_type
       CHANGING
         i_scope_objects        = scope_objects
       EXCEPTIONS
@@ -166,33 +166,40 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
     IF findtype IS NOT INITIAL.
       IF strlen( findtype ) > 3.
         " new WB object types
-        result-trobjtype = findtype(4).
-        result-subtype   = findtype+4.
+        result-type-trobjtype = findtype(4).
+        result-type-subtype   = findtype+4.
       ELSE.
         " legacy types
-        result-legacy_type = findtype.
-        cl_wb_object_type=>get_r3tr_from_internal_type( EXPORTING  p_internal_type = result-legacy_type
-                                                        RECEIVING  p_tadir_type    = result-trobjtype
+        result-type-legacy_type = findtype.
+        cl_wb_object_type=>get_r3tr_from_internal_type( EXPORTING  p_internal_type = result-type-legacy_type
+                                                        RECEIVING  p_tadir_type    = result-type-trobjtype
                                                         EXCEPTIONS OTHERS          = 0 ).
       ENDIF.
     ENDIF.
 
-    IF result-legacy_type NOT IN relevant_legacy_types.
+    IF result-type-legacy_type NOT IN relevant_legacy_types.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
-          text = |Unsupported legacy type { result-legacy_type } type detected|.
+          text = |Unsupported legacy type { result-type-legacy_type } type detected|.
     ENDIF.
 
     IF findstrings IS NOT INITIAL.
-      READ TABLE findstrings INDEX 1 INTO findstring.
+      DATA(findstring) = findstrings[ 1 ].
       result-object_name      = findstring-object.
       result-encl_object_name = findstring-encl_obj.
     ENDIF.
 
     IF scope_objects IS NOT INITIAL.
-      READ TABLE scope_objects INDEX 1 INTO scope_object.
-      result-scope_object_name      = scope_object-object.
-      result-scope_encl_object_name = scope_object-encl_obj.
+      DATA(scope_object) = scope_objects[ 1 ].
+      result-scope_object-object_name      = scope_object-object.
+      result-scope_object-encl_object_name = scope_object-encl_obj.
+    ENDIF.
+
+    IF scope_object_type IS NOT INITIAL.
+      result-scope_object-legacy_type = scope_object_type.
+      cl_wb_object_type=>get_r3tr_from_internal_type( EXPORTING  p_internal_type = result-scope_object-legacy_type
+                                                      RECEIVING  p_tadir_type    = result-scope_object-trobjtype
+                                                      EXCEPTIONS OTHERS          = 0 ).
     ENDIF.
 
   ENDMETHOD.
@@ -213,9 +220,8 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
       element_info->full_name = element_info->full_name(method_part_offset).
 
       " append alias name parts to full name
-
       element_info->full_name = |{ element_info->full_name }\\IN:{ method_props-alias_for(comp_separator) }| &&
-                             |\\ME:{ method_props-alias_for+after_sep_offset }|.
+                                |\\ME:{ method_props-alias_for+after_sep_offset }|.
 
       " refetch the full_name info
       fullname_info = zcl_acallh_fullname_util=>get_info_obj( element_info->full_name ).
@@ -242,8 +248,11 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
           text = |Unsupported Tag { tag } detected|.
     ENDIF.
 
-    DATA(element_info) = CORRESPONDING zif_acallh_ty_global=>ty_abap_element(
-      fill_elem_info_via_crossref( fullname = fullname ) ).
+    DATA(element_info) = conv_fullname_to_abap_elem( fullname = fullname ).
+    IF compiler IS INITIAL.
+      compiler = zcl_acallh_abap_compiler=>get( main_prog = main_prog ).
+    ENDIF.
+    element_info-alias_full_name = compiler->get_alias_fullname( fullname ).
     element_info-main_program = main_prog.
     element_info-include = include.
     element_info-tag = tag.

@@ -21,16 +21,11 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
         ref  TYPE REF TO zif_acallh_abap_element,
       END OF ty_abap_element_info_by_line.
 
-    CLASS-DATA:
-      instance TYPE REF TO zif_acallh_call_hierarchy_srv.
-
     DATA:
       factory           TYPE REF TO zif_acallh_abap_element_fac,
       abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element,
       refs_for_range    TYPE scr_names_tags_grades,
-      called_include    TYPE program,
       compiler          TYPE REF TO zif_acallh_abap_compiler,
-      descr_reader      TYPE REF TO zif_acallh_elem_descr_reader,
       current_element   TYPE REF TO zif_acallh_abap_element.
 
     METHODS:
@@ -67,13 +62,6 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
           refs          TYPE scr_refs
         RETURNING
           VALUE(result) TYPE scr_refs,
-      fill_legacy_type
-        IMPORTING
-          full_name         TYPE string
-        CHANGING
-          abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element
-        RETURNING
-          VALUE(result)     TYPE seu_stype,
       determine_correct_src_pos
         IMPORTING
           settings TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings OPTIONAL
@@ -88,7 +76,6 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD constructor.
     ASSERT abap_elem_factory IS BOUND.
     me->factory = abap_elem_factory.
-    descr_reader = zcl_acallh_elem_descr_reader=>get_instance( ).
   ENDMETHOD.
 
 
@@ -228,39 +215,6 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
   METHOD get_call_positions.
     result = VALUE #( FOR <ref> IN refs ( line = <ref>-line column = <ref>-column ) ).
-  ENDMETHOD.
-
-
-  METHOD fill_legacy_type.
-    DATA(ref_stack) = zcl_acallh_fullname_util=>get_parts( full_name ).
-
-    CHECK lines( ref_stack ) >= 1.
-
-    DATA(first_ref_entry) = ref_stack[ 1 ].
-    DATA(second_ref_entry) = VALUE #( ref_stack[ 2 ] OPTIONAL ).
-
-    IF first_ref_entry-tag = cl_abap_compiler=>tag_type.
-      abap_element_info-legacy_type = swbm_c_type_cls_mtd_impl.
-
-      abap_element_info-encl_object_name =
-        abap_element_info-encl_obj_display_name = first_ref_entry-name.
-    ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_program.
-      abap_element_info-encl_object_name = first_ref_entry-name.
-
-      IF second_ref_entry-tag = cl_abap_compiler=>tag_type.
-        abap_element_info-legacy_type = swbm_c_type_prg_class_method.
-
-        DATA(encl_class) = translate( val = CONV seoclsname( first_ref_entry-name ) from = '=' to = '' ).
-        abap_element_info-encl_obj_display_name = |{ encl_class }=>{ second_ref_entry-name }|.
-      ELSE.
-        abap_element_info-legacy_type = swbm_c_type_prg_subroutine.
-        abap_element_info-encl_obj_display_name = abap_element_info-encl_object_name.
-      ENDIF.
-    ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_form.
-      abap_element_info-legacy_type = swbm_c_type_prg_subroutine.
-    ELSEIF first_ref_entry-tag = cl_abap_compiler=>tag_function.
-      abap_element_info-legacy_type = swbm_c_type_function.
-    ENDIF.
   ENDMETHOD.
 
 

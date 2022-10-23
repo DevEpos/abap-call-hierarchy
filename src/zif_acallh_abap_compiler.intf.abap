@@ -3,6 +3,12 @@ INTERFACE zif_acallh_abap_compiler
   PUBLIC.
 
   METHODS:
+    "! <p class="shorttext synchronized" lang="en">Retrieves alias for full name (e.g. interface method)</p>
+    get_alias_fullname
+      IMPORTING
+        full_name     TYPE string
+      RETURNING
+        VALUE(result) TYPE string,
     "! <p class="shorttext synchronized" lang="en">Retrieves ABAP element src info by begin/end refs</p>
     get_src_by_start_end_refs
       IMPORTING

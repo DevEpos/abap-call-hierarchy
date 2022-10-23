@@ -13,6 +13,12 @@
    <DESCRIPTIONS>
     <SEOCOMPOTX>
      <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>
+     <CMPNAME>GET_ALIAS_FULLNAME</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Retrieves alias for full name (e.g. interface method)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_ACALLH_ABAP_COMPILER</CLSNAME>
      <CMPNAME>GET_DIRECT_REFERENCES</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Retrieves direct references for full name(s)</DESCRIPT>
