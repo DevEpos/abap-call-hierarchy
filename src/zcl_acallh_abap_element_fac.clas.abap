@@ -31,7 +31,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
+CLASS zcl_acallh_abap_element_fac IMPLEMENTATION.
 
 
   METHOD constructor.
@@ -119,8 +119,9 @@ CLASS ZCL_ACALLH_ABAP_ELEMENT_FAC IMPLEMENTATION.
     l_element_info-adt_type = get_adt_type( l_element_info ).
 
     result = NEW zcl_acallh_abap_element(
-      data              = l_element_info
-      hierarchy_service = zcl_acallh_call_hierarchy=>get_call_hierarchy_srv( ) ).
+      data                = l_element_info
+      hierarchy_service   = zcl_acallh_call_hierarchy=>get_call_hierarchy_srv( )
+      where_used_hier_srv = zcl_acallh_call_hierarchy=>get_where_used_hierarchy_srv( ) ).
   ENDMETHOD.
 
 ENDCLASS.

@@ -10,6 +10,9 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
       get_call_hierarchy_srv
         RETURNING
           VALUE(result) TYPE REF TO zif_acallh_call_hierarchy_srv,
+      get_where_used_hierarchy_srv
+        RETURNING
+          VALUE(result) TYPE REF TO zif_acallh_where_used_srv,
       "! <p class="shorttext synchronized" lang="en">Retrieves ABAP element at URI</p>
       get_abap_element_from_uri
         IMPORTING
@@ -29,7 +32,8 @@ CLASS zcl_acallh_call_hierarchy DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
     CLASS-DATA:
-      hierarchy_srv TYPE REF TO zif_acallh_call_hierarchy_srv.
+      hierarchy_srv       TYPE REF TO zif_acallh_call_hierarchy_srv,
+      where_used_hier_srv TYPE REF TO zif_acallh_where_used_srv.
 ENDCLASS.
 
 
@@ -58,6 +62,16 @@ CLASS zcl_acallh_call_hierarchy IMPLEMENTATION.
     ENDIF.
 
     result = hierarchy_srv.
+  ENDMETHOD.
+
+
+  METHOD get_where_used_hierarchy_srv.
+    IF where_used_hier_srv IS INITIAL.
+      where_used_hier_srv = NEW zcl_acallh_where_used_srv(
+        abap_elem_fac = zcl_acallh_abap_element_fac=>get_instance( ) ).
+    ENDIF.
+
+    result = where_used_hier_srv.
   ENDMETHOD.
 
 ENDCLASS.

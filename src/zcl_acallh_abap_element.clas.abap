@@ -11,12 +11,17 @@ CLASS zcl_acallh_abap_element DEFINITION
     METHODS:
       constructor
         IMPORTING
-          hierarchy_service TYPE REF TO zif_acallh_call_hierarchy_srv
-          data              TYPE zif_acallh_ty_global=>ty_abap_element
+          hierarchy_service   TYPE REF TO zif_acallh_call_hierarchy_srv
+          where_used_hier_srv TYPE REF TO zif_acallh_where_used_srv
+          data                TYPE zif_acallh_ty_global=>ty_abap_element
         RAISING
           zcx_acallh_exception,
 
       set_hierarchy_possible
+        IMPORTING
+          value TYPE abap_bool,
+
+      set_where_used_possible
         IMPORTING
           value TYPE abap_bool.
   PROTECTED SECTION.
@@ -39,7 +44,9 @@ CLASS zcl_acallh_abap_element DEFINITION
 
     DATA:
       hierarchy_service          TYPE REF TO zif_acallh_call_hierarchy_srv,
+      where_used_hier_srv        TYPE REF TO zif_acallh_where_used_srv,
       is_hierarchy_possible      TYPE abap_bool,
+      is_where_used_possible     TYPE abap_bool,
       is_called_units_determined TYPE abap_bool,
       called_elements            TYPE zif_acallh_abap_element=>ty_ref_tab.
 ENDCLASS.
@@ -51,7 +58,9 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
   METHOD constructor.
     element_info = data.
     me->hierarchy_service = hierarchy_service.
+    me->where_used_hier_srv = where_used_hier_srv.
     is_hierarchy_possible = abap_true.
+    is_where_used_possible = abap_true.
   ENDMETHOD.
 
 
@@ -60,9 +69,15 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD set_where_used_possible.
+    is_where_used_possible = value.
+  ENDMETHOD.
+
+
   METHOD zif_acallh_abap_element~set_include.
     element_info-include = value.
   ENDMETHOD.
+
 
   METHOD zif_acallh_abap_element~get_called_elements.
     IF force_reset = abap_true.
@@ -79,6 +94,16 @@ CLASS zcl_acallh_abap_element IMPLEMENTATION.
 
     result = called_elements.
   ENDMETHOD.
+
+
+  METHOD zif_acallh_abap_element~get_calling_elements.
+
+    IF is_where_used_possible = abap_true.
+      result = where_used_hier_srv->get_where_used_elements( abap_element = me ).
+    ENDIF.
+
+  ENDMETHOD.
+
 
   METHOD zif_acallh_abap_element~get_call_position_uri.
 **********************************************************************

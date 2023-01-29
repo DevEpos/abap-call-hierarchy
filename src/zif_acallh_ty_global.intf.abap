@@ -107,6 +107,8 @@ INTERFACE zif_acallh_ty_global
       parent_main_program   TYPE progname,
       main_program          TYPE progname,
       call_positions        TYPE ty_call_positions,
-    END OF ty_abap_element.
+    END OF ty_abap_element,
+
+    ty_abap_elements TYPE STANDARD TABLE OF zif_acallh_ty_global=>ty_abap_element WITH EMPTY KEY.
 
 ENDINTERFACE.

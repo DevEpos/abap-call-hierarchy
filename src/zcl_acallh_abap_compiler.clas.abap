@@ -223,4 +223,23 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
         OTHERS                     = 3 ).
   ENDMETHOD.
 
+
+  METHOD zif_acallh_abap_compiler~get_all_refs.
+    abap_compiler->get_all_refs(
+      EXPORTING
+        p_local  = abap_true
+*       p_testcode    = ' '
+*       p_types  =
+*       p_grades =
+*       p_no_includes =
+       p_extended    = abap_true
+       p_internal    = abap_true
+      IMPORTING
+        p_result = result
+*       p_error  =
+*       p_errors =
+*       p_abort  =
+    ).
+  ENDMETHOD.
+
 ENDCLASS.

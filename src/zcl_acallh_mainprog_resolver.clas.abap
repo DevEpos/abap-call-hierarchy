@@ -18,6 +18,13 @@ CLASS zcl_acallh_mainprog_resolver DEFINITION
         RAISING
           zcx_acallh_exception,
 
+      "! <p class="shorttext synchronized" lang="en">Retrieves main program from include</p>
+      get_main_prog_by_include
+        IMPORTING
+          include       TYPE progname
+        RETURNING
+          VALUE(result) TYPE progname,
+
       "! <p class="shorttext synchronized" lang="en">Resolves main program from ABAP full name</p>
       get_from_full_name
         IMPORTING
@@ -68,6 +75,26 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
         ENDIF.
 
     ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD get_main_prog_by_include.
+    DATA: main_programs TYPE programt.
+
+    CALL FUNCTION 'RS_GET_MAINPROGRAMS'
+      EXPORTING
+        name         = include
+      TABLES
+        mainprograms = main_programs
+      EXCEPTIONS
+        cancelled    = 1
+        OTHERS       = 2.
+
+    IF sy-subrc <> 0 OR main_programs IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    result = main_programs[ 1 ].
   ENDMETHOD.
 
 

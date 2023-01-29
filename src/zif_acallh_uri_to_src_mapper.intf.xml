@@ -12,7 +12,6 @@
    </VSEOINTERF>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZIF_ACALLH_URI_TO_SRC_MAPPER</CLSNAME>
      <CMPNAME>MAP_ADT_URI_TO_SRC</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Maps an ADT URI to the include/program of its origin</DESCRIPT>

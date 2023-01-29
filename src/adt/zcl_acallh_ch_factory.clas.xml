@@ -13,7 +13,6 @@
    </VSEOCLASS>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_ACALLH_CH_FACTORY</CLSNAME>
      <CMPNAME>CREATE_CALL_HIER_RESULT_CH</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Creates content handler call hierarchy result</DESCRIPT>

@@ -3,6 +3,10 @@ INTERFACE zif_acallh_abap_compiler
   PUBLIC.
 
   METHODS:
+    "! Returns all references
+    get_all_refs
+      RETURNING
+        VALUE(result) TYPE scr_glrefs,
     "! <p class="shorttext synchronized" lang="en">Retrieves alias for full name (e.g. interface method)</p>
     get_alias_fullname
       IMPORTING

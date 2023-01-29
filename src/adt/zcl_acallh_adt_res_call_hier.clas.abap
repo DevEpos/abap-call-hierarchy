@@ -11,12 +11,17 @@ CLASS zcl_acallh_adt_res_call_hier DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
     METHODS:
-      create_result
+      create_callees_result
         IMPORTING
           root_element       TYPE REF TO zif_acallh_abap_element
           hierarchy_settings TYPE zif_acallh_ty_global=>ty_hierarchy_api_settings
         RETURNING
           VALUE(result)      TYPE zif_acallh_ty_adt=>ty_call_hierarchy_result,
+      create_callers_result
+        IMPORTING
+          root_element  TYPE REF TO zif_acallh_abap_element
+        RETURNING
+          VALUE(result) TYPE zif_acallh_ty_adt=>ty_call_hierarchy_result,
       get_path_type
         IMPORTING
           request       TYPE REF TO if_adt_rest_request
@@ -42,7 +47,13 @@ CLASS zcl_acallh_adt_res_call_hier DEFINITION
         IMPORTING
           abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element
         RETURNING
-          VALUE(result)     TYPE string.
+          VALUE(result)     TYPE string,
+      create_result
+        IMPORTING
+          root_element  TYPE REF TO zif_acallh_abap_element
+          elements      TYPE zif_acallh_abap_element=>ty_ref_tab
+        RETURNING
+          VALUE(result) TYPE zif_acallh_ty_adt=>ty_call_hierarchy_result.
 ENDCLASS.
 
 
@@ -73,9 +84,11 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
     ENDTRY.
 
     IF root_element IS NOT INITIAL.
-      hierarchy_result = create_result(
-        root_element       = root_element
-        hierarchy_settings = hierarchy_settings ).
+*      hierarchy_result = create_callees_result(
+*        root_element       = root_element
+*        hierarchy_settings = hierarchy_settings ).
+      hierarchy_result = create_callers_result(
+        root_element = root_element ).
       response->set_body_data(
         content_handler = zcl_acallh_ch_factory=>create_call_hier_result_ch( )
         data            = hierarchy_result ).
@@ -102,9 +115,21 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD create_result.
-    DATA(called_elements) = root_element->get_called_elements( settings = hierarchy_settings ).
+  METHOD create_callees_result.
+    result = create_result(
+      root_element = root_element
+      elements     = root_element->get_called_elements( settings = hierarchy_settings ) ).
+  ENDMETHOD.
 
+
+  METHOD create_callers_result.
+    result = create_result(
+      root_element = root_element
+      elements     = root_element->get_calling_elements( ) ).
+  ENDMETHOD.
+
+
+  METHOD create_result.
     DATA(root_uri) = root_element->get_call_position_uri( ).
     DATA(root_object_identifier) = get_object_identifier( root_element->element_info ).
 
@@ -124,7 +149,7 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
           encl_obj_display_name = root_element->element_info-encl_obj_display_name
           method_props          = root_element->element_info-method_props ) ) ).
 
-    LOOP AT called_elements INTO DATA(called_element).
+    LOOP AT elements INTO DATA(called_element).
       DATA(call_positions) = VALUE zif_acallh_ty_adt=>ty_call_positions(
         FOR <callpos> IN called_element->element_info-call_positions
         ( convert_call_position(

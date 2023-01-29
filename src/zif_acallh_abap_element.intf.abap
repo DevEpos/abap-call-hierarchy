@@ -24,6 +24,11 @@ INTERFACE zif_acallh_abap_element
       RETURNING
         VALUE(result) TYPE ty_ref_tab,
 
+    "! <p class="shorttext synchronized" lang="en">Retrieves elements that call this ABAP element</p>
+    get_calling_elements
+      RETURNING
+        VALUE(result) TYPE ty_ref_tab,
+
     "! <p class="shorttext synchronized" lang="en">Updates the include where the element occurs</p>
     set_include
       IMPORTING

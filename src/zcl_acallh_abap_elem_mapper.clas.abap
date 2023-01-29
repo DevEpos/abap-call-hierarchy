@@ -266,6 +266,8 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
                               CHANGING  fullname_info = fullname_info ).
     ENDIF.
 
+    " TODO: resolve include from object/enclosing object
+
     result = element_info.
   ENDMETHOD.
 
