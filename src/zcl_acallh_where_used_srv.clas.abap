@@ -39,7 +39,7 @@ CLASS zcl_acallh_where_used_srv DEFINITION
     DATA:
       abap_elem_fac          TYPE REF TO zif_acallh_abap_element_fac,
       current_element        TYPE REF TO zif_acallh_abap_element,
-      abap_element_info      TYPE zif_acallh_ty_global=>ty_abap_element,
+      current_element_info   TYPE zif_acallh_ty_global=>ty_abap_element,
       incomplete_types_range TYPE RANGE OF string,
       incomplete_elems       TYPE zif_acallh_ty_global=>ty_abap_elements,
       result_elems_raw       TYPE zif_acallh_ty_global=>ty_abap_elements.
@@ -118,7 +118,7 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
     CHECK abap_element->element_info-main_program IS NOT INITIAL.
 
     current_element = abap_element.
-    abap_element_info = abap_element->element_info.
+    current_element_info = abap_element->element_info.
 
     CLEAR: incomplete_elems,
            result_elems_raw.
@@ -143,22 +143,22 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
   METHOD get_referenced_obj_from_data.
     result = VALUE #(
-      full_name    = COND #( WHEN abap_element_info-alias_full_name IS NOT INITIAL THEN
-                               abap_element_info-alias_full_name
+      full_name    = COND #( WHEN current_element_info-alias_full_name IS NOT INITIAL THEN
+                               current_element_info-alias_full_name
                              ELSE
-                               abap_element_info-full_name )
-      main_program = abap_element_info-main_program
+                               current_element_info-full_name )
+      main_program = current_element_info-main_program
       object       = VALUE #(
-        name           = abap_element_info-object_name
-        enclosing_name = abap_element_info-encl_object_name
-        type           = CORRESPONDING #( abap_element_info-type ) )
+        name           = current_element_info-object_name
+        enclosing_name = current_element_info-encl_object_name
+        type           = CORRESPONDING #( current_element_info-type ) )
       scope_object = VALUE #(
-        name           = abap_element_info-scope_object-object_name
-        enclosing_name = abap_element_info-scope_object-encl_object_name
+        name           = current_element_info-scope_object-object_name
+        enclosing_name = current_element_info-scope_object-encl_object_name
         type           = VALUE #(
-          trobjtype   = abap_element_info-scope_object-trobjtype
-          subtype     = abap_element_info-scope_object-subtype
-          legacy_type = abap_element_info-scope_object-legacy_type ) ) ).
+          trobjtype   = current_element_info-scope_object-trobjtype
+          subtype     = current_element_info-scope_object-subtype
+          legacy_type = current_element_info-scope_object-legacy_type ) ) ).
 
 
     DATA(ris_metadata) = cl_ris_metadata_factory=>get_instance( ).
@@ -268,11 +268,11 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
   METHOD get_main_program.
 
-    IF referenced_object-main_program IS NOT INITIAL.
-      result = referenced_object-main_program.
-    ELSE.
-      result = zcl_acallh_mainprog_resolver=>get_main_prog_by_include( include ).
-    ENDIF.
+*    IF referenced_object-main_program IS NOT INITIAL.
+*      result = referenced_object-main_program.
+*    ELSE.
+    result = zcl_acallh_mainprog_resolver=>get_main_prog_by_include( include ).
+*    ENDIF.
 
   ENDMETHOD.
 
@@ -287,8 +287,8 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
           text = 'No valid result'.
-    ELSEIF result-object_name = abap_element_info-object_name AND
-        result-encl_object_name = abap_element_info-encl_object_name.
+    ELSEIF result-object_name = current_element_info-object_name AND
+        result-encl_object_name = current_element_info-encl_object_name.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
           text = 'No valid result'.
@@ -297,10 +297,17 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
     set_full_name( EXPORTING generic_ris_result = generic_ris_result
                              referenced_object  = referenced_object
                    CHANGING  abap_elem          = result ).
+
+    IF result-full_name IS NOT INITIAL AND
+        result-tag = cl_abap_compiler=>tag_method.
+      result-method_props = zcl_acallh_method_info_reader=>get_instance( )->read_properties( result-full_name ).
+    ENDIF.
   ENDMETHOD.
 
 
   METHOD extract_attr_from_ris_result.
+
+    result-parent_main_program = current_element_info-main_program.
 
     IF generic_ris_result-object IS NOT INITIAL.
       result-include = generic_ris_result-object.
@@ -329,7 +336,9 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    result-call_positions = VALUE #( ( line = generic_ris_result-object_row ) ).
+    IF generic_ris_result-object_row > 0.
+      result-call_positions = VALUE #( ( line = generic_ris_result-object_row ) ).
+    ENDIF.
 
     IF generic_ris_result-object_cls = 'OM'.
       result-encl_object_name = cl_oo_classname_service=>get_clsname_by_include( result-main_program ).
@@ -395,6 +404,7 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
 
   METHOD set_full_name.
+    DATA object_name_parts TYPE string_table.
 
     CASE abap_elem-adt_type.
 
@@ -404,8 +414,16 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
       WHEN zif_acallh_c_adt_type=>method.
         abap_elem-tag = cl_abap_compiler=>tag_method.
-        abap_elem-full_name = |\\{ cl_abap_compiler=>tag_type }:| &&
-                              |{ abap_elem-encl_object_name }\\{ abap_elem-tag }:{ abap_elem-object_name }|.
+
+        SPLIT abap_elem-object_name AT '~' INTO TABLE object_name_parts.
+        IF lines( object_name_parts ) = 2.
+          abap_elem-full_name = |\\{ cl_abap_compiler=>tag_type }:| &&
+            |{ abap_elem-encl_object_name }\\{ cl_abap_compiler=>tag_interface }:{ object_name_parts[ 1 ] }| &&
+            |\\{ abap_elem-tag }:{ object_name_parts[ 2 ] }|.
+        ELSE.
+          abap_elem-full_name = |\\{ cl_abap_compiler=>tag_type }:| &&
+                                |{ abap_elem-encl_object_name }\\{ abap_elem-tag }:{ abap_elem-object_name }|.
+        ENDIF.
 
       WHEN OTHERS.
         " needs further determination
@@ -416,8 +434,12 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
   METHOD complete_elements.
     " TODO: complete elements in table
+    DATA: source_code TYPE string_table.
 
-    LOOP AT incomplete_elems ASSIGNING FIELD-SYMBOL(<incomplete_elem_raw>).
+    LOOP AT incomplete_elems ASSIGNING FIELD-SYMBOL(<incomplete_elem_raw>) GROUP BY <incomplete_elem_raw>-main_program.
+      CHECK <incomplete_elem_raw>-main_program IS NOT INITIAL.
+
+      zcl_acallh_abap_compiler=>get( main_prog = <incomplete_elem_raw>-main_program ).
     ENDLOOP.
 
   ENDMETHOD.
@@ -425,7 +447,16 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
   METHOD create_result_elements.
 
-    LOOP AT result_elems_raw ASSIGNING FIELD-SYMBOL(<result_elem_raw>).
+    LOOP AT result_elems_raw ASSIGNING FIELD-SYMBOL(<result_elem_raw>) GROUP BY <result_elem_raw>-full_name.
+      DATA(call_positions) = VALUE zif_acallh_ty_global=>ty_call_positions( ).
+      LOOP AT GROUP <result_elem_raw> ASSIGNING FIELD-SYMBOL(<group_elem>).
+        call_positions = VALUE #( BASE call_positions ( LINES OF <group_elem>-call_positions ) ).
+      ENDLOOP.
+
+      SORT call_positions BY line.
+
+      <result_elem_raw>-call_positions = call_positions.
+
       TRY.
           result = VALUE #( BASE result ( abap_elem_fac->create_abap_element( <result_elem_raw> ) ) ).
         CATCH zcx_acallh_exception.
