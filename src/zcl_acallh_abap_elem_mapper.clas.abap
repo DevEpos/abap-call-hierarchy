@@ -44,11 +44,13 @@ CLASS zcl_acallh_abap_elem_mapper DEFINITION
         IMPORTING
           main_prog     TYPE progname
           fullname      TYPE string
-          include       TYPE progname OPTIONAL
         RETURNING
           VALUE(result) TYPE zif_acallh_ty_global=>ty_abap_element
         RAISING
-          zcx_acallh_exception.
+          zcx_acallh_exception,
+      set_include
+        CHANGING
+          element_info TYPE zif_acallh_ty_global=>ty_abap_element.
 ENDCLASS.
 
 
@@ -83,7 +85,6 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
 
     result = convert_fullname_to_abap_elem(
       main_prog = uri_include_info-main_prog
-      include   = uri_include_info-include
       fullname  = fullname ).
   ENDMETHOD.
 
@@ -254,7 +255,6 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
     ENDIF.
     element_info-alias_full_name = compiler->get_alias_fullname( fullname ).
     element_info-main_program = main_prog.
-    element_info-include = include.
     element_info-tag = tag.
 
     DATA(current_main_prog) = element_info-main_program.
@@ -266,9 +266,27 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
                               CHANGING  fullname_info = fullname_info ).
     ENDIF.
 
-    " TODO: resolve include from object/enclosing object
+    set_include( CHANGING element_info = element_info ).
 
     result = element_info.
+  ENDMETHOD.
+
+
+  METHOD set_include.
+    IF element_info-main_program+30(1) = seop_inctype_interface AND
+        element_info-main_program+31(1) = seop_inccode_pool.
+      element_info-include = cl_oo_classname_service=>get_intfsec_name( CONV #( element_info-encl_object_name ) ).
+
+      DATA(refs) = compiler->get_refs_by_fullname( full_name = element_info-full_name ).
+      IF lines( refs ) = 1.
+        DATA(intf_method_ref) = REF #( refs[ 1 ] ).
+        element_info-source_pos_start = VALUE #(
+          line   = intf_method_ref->line
+          column = intf_method_ref->column ).
+      ENDIF.
+    ELSE.
+      element_info-include = compiler->get_src_by_start_end_refs( full_name = element_info-full_name )-include.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
