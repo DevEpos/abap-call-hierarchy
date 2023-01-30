@@ -91,8 +91,8 @@ CLASS zcl_acallh_adt_eleminfo_reader IMPLEMENTATION.
       result-is_redefined = get_boolean_meth_prop( elem_info = elem_info
                                                    name      = if_cc_adt_res_code_eleminfo_co=>co_redefinition ).
       " [7.40-CompatIssue] 'if_cc_adt_res_code_eleminfo_co=>co_alias_referenced_intf' Not available
-**      result-is_alias = get_boolean_meth_prop( elem_info = elem_info
-**                                               name      = if_cc_adt_res_code_eleminfo_co=>co_alias_referenced_intf ).
+      result-is_alias = get_boolean_meth_prop( elem_info = elem_info
+                                               name      = 'refInterface' ). "if_cc_adt_res_code_eleminfo_co=>co_alias_referenced_intf ).
     ENDIF.
   ENDMETHOD.
 
@@ -106,7 +106,7 @@ CLASS zcl_acallh_adt_eleminfo_reader IMPLEMENTATION.
   METHOD get_boolean_meth_prop.
     DATA(prop_value) = VALUE #( elem_info-properties[ key = name ]-value OPTIONAL ).
     " [7.40-CompatIssue] 'if_cc_adt_res_code_eleminfo_co=>co_true' Not available
-**    result = xsdbool( prop_value = if_cc_adt_res_code_eleminfo_co=>co_true ).
+    result = xsdbool( prop_value = 'true' ). " if_cc_adt_res_code_eleminfo_co=>co_true ).
   ENDMETHOD.
 
 
