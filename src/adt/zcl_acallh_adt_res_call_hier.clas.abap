@@ -158,7 +158,8 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
 
       result-entries = VALUE #( BASE result-entries
         ( object_ref            = VALUE zif_acallh_ty_adt=>ty_adt_obj_ref(
-            uri          = call_positions[ 1 ]-uri
+            " fallback to start of include if no call positions could be found
+            uri          = VALUE #( call_positions[ 1 ]-uri DEFAULT called_element->get_call_position_uri( ) )
             parent_uri   = root_uri
             name         = called_element->element_info-object_name
             description  = called_element->element_info-description
