@@ -22,11 +22,11 @@ CLASS zcl_acallh_call_hierarchy_srv DEFINITION
       END OF ty_abap_element_info_by_line.
 
     DATA:
-      factory           TYPE REF TO zif_acallh_abap_element_fac,
-      abap_element_info TYPE zif_acallh_ty_global=>ty_abap_element,
-      refs_for_range    TYPE scr_names_tags_grades,
-      compiler          TYPE REF TO zif_acallh_abap_compiler,
-      current_element   TYPE REF TO zif_acallh_abap_element.
+      factory              TYPE REF TO zif_acallh_abap_element_fac,
+      current_element_info TYPE zif_acallh_ty_global=>ty_abap_element,
+      refs_for_range       TYPE scr_names_tags_grades,
+      compiler             TYPE REF TO zif_acallh_abap_compiler,
+      current_element      TYPE REF TO zif_acallh_abap_element.
 
     METHODS:
       get_full_names_in_range
@@ -83,7 +83,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
     CHECK abap_element->element_info-main_program IS NOT INITIAL.
 
     me->current_element = abap_element.
-    abap_element_info = abap_element->element_info.
+    current_element_info = abap_element->element_info.
 
     get_full_names_in_range( settings ).
     IF refs_for_range IS INITIAL.
@@ -95,14 +95,14 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
 
 
   METHOD get_full_names_in_range.
-    compiler = zcl_acallh_abap_compiler=>get( abap_element_info-main_program ).
+    compiler = zcl_acallh_abap_compiler=>get( current_element_info-main_program ).
 
-    IF abap_element_info-source_pos_start IS INITIAL.
+    IF current_element_info-source_pos_start IS INITIAL.
       TRY.
-          DATA(old_main_prog) = abap_element_info-main_program.
+          DATA(old_main_prog) = current_element_info-main_program.
           determine_correct_src_pos( settings ).
-          IF abap_element_info-main_program <> old_main_prog.
-            compiler = zcl_acallh_abap_compiler=>get( main_prog = abap_element_info-main_program ).
+          IF current_element_info-main_program <> old_main_prog.
+            compiler = zcl_acallh_abap_compiler=>get( main_prog = current_element_info-main_program ).
           ENDIF.
         CATCH zcx_acallh_exception.
           RETURN.
@@ -110,9 +110,9 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
     ENDIF.
 
     refs_for_range = compiler->get_refs_in_range(
-      include    = abap_element_info-include
-      start_line = abap_element_info-source_pos_start-line + 1
-      end_line   = abap_element_info-source_pos_end-line ).
+      include    = current_element_info-include
+      start_line = current_element_info-source_pos_start-line + 1
+      end_line   = current_element_info-source_pos_end-line ).
   ENDMETHOD.
 
 
@@ -153,7 +153,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
       full_name           = full_name
       include             = direct_ref-statement->source_info->name
       call_positions      = call_positions
-      parent_main_program = abap_element_info-main_program ).
+      parent_main_program = current_element_info-main_program ).
 
     IF direct_ref-tag = cl_abap_compiler=>tag_method.
       new_elem_info-method_props = zcl_acallh_method_info_reader=>get_instance( )->read_properties( full_name = full_name ).
@@ -185,11 +185,11 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD get_direct_references.
     result = compiler->get_direct_references(
       full_names = VALUE #( FOR <ref> IN refs_for_range ( <ref>-full_name ) )
-      start_line = abap_element_info-source_pos_start-line + 1
-      end_line   = abap_element_info-source_pos_end-line ).
+      start_line = current_element_info-source_pos_start-line + 1
+      end_line   = current_element_info-source_pos_end-line ).
 
     result = filter_refs_by_include(
-      include = abap_element_info-include
+      include = current_element_info-include
       refs    = result ).
   ENDMETHOD.
 
@@ -221,15 +221,15 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD determine_correct_src_pos.
     DATA implementing_classes TYPE seor_implementing_keys.
 
-    IF abap_element_info-tag = cl_abap_compiler=>tag_method AND
-        abap_element_info-method_props-encl_type = zif_acallh_c_tadir_type=>interface.
+    IF current_element_info-tag = cl_abap_compiler=>tag_method AND
+        current_element_info-method_props-encl_type = zif_acallh_c_tadir_type=>interface.
 
       IF settings-use_first_intf_impl = abap_true.
         " TODO: move logic to new class
 
         CALL FUNCTION 'SEO_INTERFACE_IMPLEM_GET_ALL'
           EXPORTING
-            intkey       = VALUE seoclskey( clsname = abap_element_info-encl_object_name )
+            intkey       = VALUE seoclskey( clsname = current_element_info-encl_object_name )
           IMPORTING
             impkeys      = implementing_classes
           EXCEPTIONS
@@ -237,10 +237,10 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
             OTHERS       = 2.
         IF sy-subrc = 0.
           IF implementing_classes IS INITIAL.
-            abap_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
+            current_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>no_implementations.
             RETURN.
           ELSEIF lines( implementing_classes ) > 1.
-            abap_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>multiple_implementations.
+            current_element_info-method_props-impl_state = zif_acallh_c_meth_impl_state=>multiple_implementations.
             RETURN.
           ENDIF.
 
@@ -248,9 +248,9 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
           cl_oo_classname_service=>get_method_include(
             EXPORTING
               mtdkey              = VALUE #( clsname = implementing_classes[ 1 ]-clsname
-                                             cpdname = |{ abap_element_info-encl_object_name }~{ abap_element_info-object_name }| )
+                                             cpdname = |{ current_element_info-encl_object_name }~{ current_element_info-object_name }| )
             RECEIVING
-              result              = abap_element_info-include
+              result              = current_element_info-include
             EXCEPTIONS
               class_not_existing  = 1
               method_not_existing = 2
@@ -260,28 +260,28 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
             " method could be implemented not at all (default ignore) or only in a subclass
             RETURN.
           ENDIF.
-          abap_element_info-source_pos_start = VALUE #( line = 1 ).
-          abap_element_info-source_pos_end = VALUE #( line = 1000000 ).
-          abap_element_info-main_program = cl_oo_classname_service=>get_classpool_name( implementing_classes[ 1 ]-clsname ).
+          current_element_info-source_pos_start = VALUE #( line = 1 ).
+          current_element_info-source_pos_end = VALUE #( line = 1000000 ).
+          current_element_info-main_program = cl_oo_classname_service=>get_classpool_name( implementing_classes[ 1 ]-clsname ).
         ENDIF.
       ELSEIF settings-intf_impl IS NOT INITIAL.
         " TODO: set main program to given implementation - could be local or global class
       ENDIF.
-    ELSE.
-      DATA(source_info) = compiler->get_src_by_start_end_refs( abap_element_info-full_name ).
+    ELSEIF current_element_info-include IS INITIAL.
+      DATA(source_info) = compiler->get_src_by_start_end_refs( current_element_info-full_name ).
       IF source_info IS NOT INITIAL.
-        abap_element_info-source_pos_start = source_info-start_pos.
-        abap_element_info-source_pos_end = source_info-end_pos.
-        abap_element_info-include = source_info-include.
+        current_element_info-source_pos_start = source_info-start_pos.
+        current_element_info-source_pos_end = source_info-end_pos.
+        current_element_info-include = source_info-include.
       ENDIF.
     ENDIF.
 
-    IF abap_element_info-include IS INITIAL OR abap_element_info-source_pos_start IS INITIAL.
+    IF current_element_info-include IS INITIAL OR current_element_info-source_pos_start IS INITIAL.
       RAISE EXCEPTION TYPE zcx_acallh_exception.
     ENDIF.
 
     IF current_element->element_info-include IS INITIAL.
-      current_element->set_include( abap_element_info-include ).
+      current_element->set_include( current_element_info-include ).
     ENDIF.
   ENDMETHOD.
 
