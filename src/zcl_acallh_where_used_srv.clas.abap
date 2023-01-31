@@ -142,6 +142,8 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
 
 
   METHOD get_referenced_obj_from_data.
+    DATA: name_parts TYPE string_table.
+
     result = VALUE #(
       full_name    = COND #( WHEN current_element_info-alias_full_name IS NOT INITIAL THEN
                                current_element_info-alias_full_name
@@ -160,6 +162,13 @@ CLASS zcl_acallh_where_used_srv IMPLEMENTATION.
           subtype     = current_element_info-scope_object-subtype
           legacy_type = current_element_info-scope_object-legacy_type ) ) ).
 
+
+    " adjust enclosing/object if interface component detected
+    IF result-object-name CS '~'.
+      SPLIT result-object-name AT '~' INTO TABLE name_parts.
+      result-object-name = name_parts[ 2 ].
+      result-object-enclosing_name = name_parts[ 1 ].
+    ENDIF.
 
     DATA(ris_metadata) = cl_ris_metadata_factory=>get_instance( ).
     ris_metadata->get_where_used( EXPORTING iv_trobjtype   = result-object-type-trobjtype
