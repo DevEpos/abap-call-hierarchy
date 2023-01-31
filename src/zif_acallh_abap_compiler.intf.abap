@@ -68,6 +68,11 @@ INTERFACE zif_acallh_abap_compiler
         line          TYPE i
         column        TYPE i
       RETURNING
-        VALUE(result) TYPE  scr_name_tag_grade .
+        VALUE(result) TYPE  scr_name_tag_grade,
+
+    "! <p class="shorttext synchronized" lang="en">Retrieves errors from syntax check</p>
+    get_check_errors
+      RETURNING
+        VALUE(result) TYPE scr_errors.
 
 ENDINTERFACE.
