@@ -285,7 +285,10 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
           column = intf_method_ref->column ).
       ENDIF.
     ELSE.
-      element_info-include = compiler->get_src_by_start_end_refs( full_name = element_info-full_name )-include.
+      DATA(src_info) = compiler->get_src_by_start_end_refs( full_name = element_info-full_name ).
+      element_info-include = src_info-include.
+      element_info-source_pos_start = src_info-start_pos.
+      element_info-source_pos_end = src_info-end_pos.
     ENDIF.
   ENDMETHOD.
 
