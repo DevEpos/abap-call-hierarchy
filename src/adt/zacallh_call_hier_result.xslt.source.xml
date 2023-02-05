@@ -113,6 +113,9 @@
       <tt:cond check="not-initial(method_props.is_static)">
         <tt:attribute name="hierarchy:isStatic" value-ref="method_props.is_static" option="format(boolean)" />
       </tt:cond>
+      <tt:cond check="not-initial(method_props.is_test_method)">
+        <tt:attribute name="hierarchy:isTestMethod" value-ref="method_props.is_test_method" option="format(boolean)" />
+      </tt:cond>
       <tt:cond check="not-initial(method_props.visibility)">
         <tt:attribute name="hierarchy:visibility" value-ref="method_props.visibility" />
       </tt:cond>
