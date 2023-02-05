@@ -60,12 +60,10 @@ INTERFACE zif_acallh_ty_global
 
     ty_fullname_parts TYPE STANDARD TABLE OF ty_fullname_part WITH EMPTY KEY,
 
-    ty_call_positions TYPE STANDARD TABLE OF ty_source_position WITH EMPTY KEY,
+    ty_call_positions TYPE STANDARD TABLE OF ty_source_position WITH EMPTY KEY.
 
-    BEGIN OF ty_method_properties,
-      name           TYPE abap_methname,
-      encl_type      TYPE trobjtype,
-      alias_for      TYPE abap_methname,
+  TYPES:
+    BEGIN OF ty_method_flags,
       is_final       TYPE abap_bool,
       is_abstract    TYPE abap_bool,
       is_alias       TYPE abap_bool,
@@ -75,9 +73,18 @@ INTERFACE zif_acallh_ty_global
       is_static      TYPE abap_bool,
       is_test_method TYPE abap_bool,
       visibility     TYPE ty_visibility,
-      impl_state     TYPE ty_method_impl_state,
-    END OF ty_method_properties,
+    END OF ty_method_flags.
 
+  TYPES BEGIN OF ty_method_properties.
+  TYPES:
+    name       TYPE abap_methname,
+    encl_type  TYPE trobjtype,
+    alias_for  TYPE abap_methname,
+    impl_state TYPE ty_method_impl_state.
+    INCLUDE TYPE ty_method_flags AS flags.
+  TYPES END OF ty_method_properties.
+
+  TYPES:
     BEGIN OF ty_abap_element,
       BEGIN OF type,
         legacy_type TYPE seu_stype,
