@@ -97,17 +97,15 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
   METHOD get_full_names_in_range.
     compiler = zcl_acallh_abap_compiler=>get( current_element_info-main_program ).
 
-    IF current_element_info-source_pos_start IS INITIAL.
-      TRY.
-          DATA(old_main_prog) = current_element_info-main_program.
-          determine_correct_src_pos( settings ).
-          IF current_element_info-main_program <> old_main_prog.
-            compiler = zcl_acallh_abap_compiler=>get( main_prog = current_element_info-main_program ).
-          ENDIF.
-        CATCH zcx_acallh_exception.
-          RETURN.
-      ENDTRY.
-    ENDIF.
+    TRY.
+        DATA(old_main_prog) = current_element_info-main_program.
+        determine_correct_src_pos( settings ).
+        IF current_element_info-main_program <> old_main_prog.
+          compiler = zcl_acallh_abap_compiler=>get( main_prog = current_element_info-main_program ).
+        ENDIF.
+      CATCH zcx_acallh_exception.
+        RETURN.
+    ENDTRY.
 
     refs_for_range = compiler->get_refs_in_range(
       include    = current_element_info-include
@@ -156,7 +154,7 @@ CLASS zcl_acallh_call_hierarchy_srv IMPLEMENTATION.
       parent_main_program = current_element_info-main_program ).
 
     IF direct_ref-tag = cl_abap_compiler=>tag_method.
-      new_elem_info-method_props = zcl_acallh_method_info_reader=>get_instance( )->read_properties( full_name = full_name ).
+      new_elem_info-method_props = zcl_acallh_method_info_reader=>get_instance( )->read_properties( full_name ).
       new_elem_info-encl_object_type = new_elem_info-method_props-encl_type.
     ENDIF.
 
