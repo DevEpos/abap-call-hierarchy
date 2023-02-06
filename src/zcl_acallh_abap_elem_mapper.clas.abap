@@ -84,7 +84,7 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
     DATA(fullname) = create_fullname_from_src_info( uri_include_info = uri_include_info ).
 
     result = convert_fullname_to_abap_elem(
-      main_prog = uri_include_info-main_prog
+      main_prog = zcl_acallh_mainprog_resolver=>get_from_full_name( fullname )
       fullname  = fullname ).
   ENDMETHOD.
 
@@ -236,7 +236,15 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
   METHOD convert_fullname_to_abap_elem.
 
     IF fullname IS INITIAL.
-      RAISE EXCEPTION TYPE zcx_acallh_exception.
+      RAISE EXCEPTION TYPE zcx_acallh_exception
+        EXPORTING
+          text = |Mapping to ABAP element without full name not possible|.
+    ENDIF.
+
+    IF main_prog IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_acallh_exception
+        EXPORTING
+          text = |Mapping to ABAP element without main program is not possible|.
     ENDIF.
 
     DATA(fullname_info) = zcl_acallh_fullname_util=>get_info_obj( fullname ).
@@ -249,8 +257,8 @@ CLASS zcl_acallh_abap_elem_mapper IMPLEMENTATION.
           text = |Unsupported Tag { tag } detected|.
     ENDIF.
 
-    DATA(element_info) = conv_fullname_to_abap_elem( fullname = fullname ).
-    IF compiler IS INITIAL.
+    DATA(element_info) = conv_fullname_to_abap_elem( fullname ).
+    IF compiler IS INITIAL OR compiler->get_main_program( ) <> main_prog.
       compiler = zcl_acallh_abap_compiler=>get( main_prog = main_prog ).
     ENDIF.
     element_info-alias_full_name = compiler->get_alias_fullname( fullname ).

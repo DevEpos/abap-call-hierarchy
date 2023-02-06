@@ -17,6 +17,11 @@
      <DESCRIPT>Retrieves alias for full name (e.g. interface method)</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
+     <CMPNAME>GET_CHECK_ERRORS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Retrieves errors from syntax check</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
      <CMPNAME>GET_DIRECT_REFERENCES</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Retrieves direct references for full name(s)</DESCRIPT>
@@ -25,6 +30,11 @@
      <CMPNAME>GET_FULL_NAME_FOR_POSITION</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Retrieve fullname in include for the given position</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_MAIN_PROGRAM</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Retrieves current main program of the compiler</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CMPNAME>GET_REFS_BY_FULLNAME</CMPNAME>

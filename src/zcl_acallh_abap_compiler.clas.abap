@@ -81,6 +81,11 @@ CLASS zcl_acallh_abap_compiler IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_acallh_abap_compiler~get_main_program.
+    result = main_prog.
+  ENDMETHOD.
+
+
   METHOD zif_acallh_abap_compiler~get_src_by_start_end_refs.
     abap_compiler->get_single_ref(
       EXPORTING

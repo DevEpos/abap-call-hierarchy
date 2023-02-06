@@ -73,6 +73,11 @@ INTERFACE zif_acallh_abap_compiler
     "! <p class="shorttext synchronized" lang="en">Retrieves errors from syntax check</p>
     get_check_errors
       RETURNING
-        VALUE(result) TYPE scr_errors.
+        VALUE(result) TYPE scr_errors,
+
+    "! <p class="shorttext synchronized" lang="en">Retrieves current main program of the compiler</p>
+    get_main_program
+      RETURNING
+        VALUE(result) TYPE progname.
 
 ENDINTERFACE.
