@@ -24,7 +24,7 @@ ENDCLASS.
 CLASS ltcl_unit IMPLEMENTATION.
 
   METHOD assert_equals.
-    DATA(method_reader) = zcl_acallh_method_info_reader=>get_instance( ).
+    DATA(method_reader) = zcl_acallh_method_info_reader=>get_instance( type = zcl_acallh_method_info_reader=>c_reader_type-abap_parser ).
 
     TRY.
         DATA(props) = method_reader->read_properties( fullname ).

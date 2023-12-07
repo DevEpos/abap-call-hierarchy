@@ -78,17 +78,24 @@ CLASS zcl_acallh_adt_res_call_hier IMPLEMENTATION.
     TRY.
         DATA(root_element) = get_root_element( path      = path
                                                path_type = path_type ).
-      CATCH zcx_acallh_exception.
-        response->set_status( cl_rest_status_code=>gc_success_no_content ).
-        RETURN.
+      CATCH zcx_acallh_exception INTO DATA(error).
+        RAISE EXCEPTION TYPE zcx_acallh_adt_rest
+          EXPORTING
+            text     = |Call Hierarchy failed: { error->get_text( ) }|
+            previous = error.
     ENDTRY.
 
     IF root_element IS NOT INITIAL.
-*      hierarchy_result = create_callees_result(
-*        root_element       = root_element
-*        hierarchy_settings = hierarchy_settings ).
-      hierarchy_result = create_callers_result(
-        root_element = root_element ).
+      DATA: mode TYPE c LENGTH 20.
+      GET PARAMETER ID 'ZCALL_HIER_MODE' FIELD mode.
+      IF mode = 'T'.
+        hierarchy_result = create_callees_result(
+          root_element       = root_element
+          hierarchy_settings = hierarchy_settings ).
+      ELSE.
+        hierarchy_result = create_callers_result(
+          root_element = root_element ).
+      ENDIF.
       response->set_body_data(
         content_handler = zcl_acallh_ch_factory=>create_call_hier_result_ch( )
         data            = hierarchy_result ).

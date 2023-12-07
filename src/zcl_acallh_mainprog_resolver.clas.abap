@@ -120,9 +120,15 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    cl_abap_typedescr=>describe_by_name( EXPORTING  p_name      = element_info->encl_object_name
-                                         RECEIVING  p_descr_ref = DATA(typedescr)
-                                         EXCEPTIONS OTHERS      = 1 ).
+    TRY.
+        cl_abap_typedescr=>describe_by_name( EXPORTING  p_name      = element_info->encl_object_name
+                                             RECEIVING  p_descr_ref = DATA(typedescr)
+                                             EXCEPTIONS OTHERS      = 1 ).
+      CATCH cx_root INTO DATA(syntax_error).
+        RAISE EXCEPTION TYPE zcx_acallh_exception
+          EXPORTING
+            text = |{ syntax_error->get_text( ) }|.
+    ENDTRY.
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE zcx_acallh_exception
         EXPORTING
