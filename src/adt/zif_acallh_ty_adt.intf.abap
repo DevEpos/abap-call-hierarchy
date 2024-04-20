@@ -1,9 +1,9 @@
-"! <p class="shorttext synchronized" lang="en">Types for ADT communication</p>
+"! <p class="shorttext synchronized">Types for ADT communication</p>
 INTERFACE zif_acallh_ty_adt
   PUBLIC.
 
   TYPES BEGIN OF ty_method_properties.
-  INCLUDE TYPE zif_acallh_ty_global=>ty_method_properties.
+          INCLUDE TYPE zif_acallh_ty_global=>ty_method_properties.
   TYPES END OF ty_method_properties.
 
   TYPES:
@@ -22,17 +22,18 @@ INTERFACE zif_acallh_ty_adt
       package_name TYPE string,
       "! Owner of the referenced entity - optional
       owner        TYPE string,
-    END OF ty_adt_obj_ref,
+    END OF ty_adt_obj_ref.
 
-
+  TYPES:
     BEGIN OF ty_call_position,
       line   TYPE i,
       column TYPE i,
       uri    TYPE string,
     END OF ty_call_position,
 
-    ty_call_positions TYPE STANDARD TABLE OF ty_call_position WITH EMPTY KEY,
+    ty_call_positions TYPE STANDARD TABLE OF ty_call_position WITH EMPTY KEY.
 
+  TYPES:
     BEGIN OF ty_abap_element,
       object_ref            TYPE ty_adt_obj_ref,
       "! Identifies the found abap element <br/>
@@ -45,8 +46,9 @@ INTERFACE zif_acallh_ty_adt
       call_positions        TYPE ty_call_positions,
     END OF ty_abap_element,
 
-    ty_abap_elements TYPE STANDARD TABLE OF ty_abap_element WITH EMPTY KEY,
+    ty_abap_elements TYPE STANDARD TABLE OF ty_abap_element WITH EMPTY KEY.
 
+  TYPES:
     BEGIN OF ty_call_hierarchy_result,
       origin_type              TYPE string,
       origin_object_name       TYPE string,

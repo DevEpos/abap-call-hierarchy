@@ -1,58 +1,62 @@
-"! <p class="shorttext synchronized" lang="en">Determines main program from object</p>
+"! <p class="shorttext synchronized">Determines main program from object</p>
 CLASS zcl_acallh_mainprog_resolver DEFINITION
-  PUBLIC
-  FINAL
+  PUBLIC FINAL
   CREATE PUBLIC.
 
   PUBLIC SECTION.
-    CLASS-METHODS:
-      "! <p class="shorttext synchronized" lang="en">Fills main program if still empty</p>
-      "!
-      "! @parameter element_info | Compilation unit data
-      "! @parameter ignore_filled | if 'X' the main program will always be filled even if not empty. <br/>
-      "!   This is currently only of relevance for method types (OM)
-      resolve_main_prog
-        IMPORTING
-          element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
-          ignore_filled TYPE abap_bool OPTIONAL
-        RAISING
-          zcx_acallh_exception,
+    "! <p class="shorttext synchronized">Fills main program if still empty</p>
+    "!
+    "! @parameter element_info  | Compilation unit data
+    "! @parameter ignore_filled | if 'X' the main program will always be filled even if not empty. <br/>
+    "!   This is currently only of relevance for method types (OM)
+    CLASS-METHODS resolve_main_prog
+      IMPORTING
+        element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
+        ignore_filled TYPE abap_bool OPTIONAL
+      RAISING
+        zcx_acallh_exception.
 
-      "! <p class="shorttext synchronized" lang="en">Retrieves main program from include</p>
-      get_main_prog_by_include
-        IMPORTING
-          include       TYPE progname
-        RETURNING
-          VALUE(result) TYPE progname,
+    "! <p class="shorttext synchronized">Retrieves main program from include</p>
+    CLASS-METHODS get_main_prog_by_include
+      IMPORTING
+        !include      TYPE progname
+      RETURNING
+        VALUE(result) TYPE progname.
 
-      "! <p class="shorttext synchronized" lang="en">Resolves main program from ABAP full name</p>
-      get_from_full_name
-        IMPORTING
-          full_name     TYPE string
-        RETURNING
-          VALUE(result) TYPE progname
-        RAISING
-          zcx_acallh_exception.
-  PROTECTED SECTION.
+    "! <p class="shorttext synchronized">Resolves main program from ABAP full name</p>
+    CLASS-METHODS get_from_full_name
+      IMPORTING
+        full_name     TYPE string
+      RETURNING
+        VALUE(result) TYPE progname
+      RAISING
+        zcx_acallh_exception.
+
   PRIVATE SECTION.
-    CLASS-METHODS:
-      get_function_main_prog
-        IMPORTING
-          function_name TYPE rs38l_fnam
-        RETURNING
-          VALUE(result) TYPE progname,
-      resolve_main_prog_om
-        IMPORTING
-          ignore_filled TYPE abap_bool
-          element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
-        RAISING
-          zcx_acallh_exception.
+    CLASS-METHODS get_function_main_prog
+      IMPORTING
+        function_name TYPE rs38l_fnam
+      RETURNING
+        VALUE(result) TYPE progname.
+
+    CLASS-METHODS resolve_main_prog_om
+      IMPORTING
+        ignore_filled TYPE abap_bool
+        element_info  TYPE REF TO zif_acallh_ty_global=>ty_abap_element
+      RAISING
+        zcx_acallh_exception.
+
+    CLASS-METHODS get_clif_type
+      IMPORTING
+        classname     TYPE classname
+      RETURNING
+        VALUE(result) TYPE seoclstype
+      RAISING
+        zcx_acallh_exception.
 ENDCLASS.
 
 
-
 CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
-
   METHOD resolve_main_prog.
     CASE element_info->type-legacy_type.
 
@@ -77,18 +81,14 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
     ENDCASE.
   ENDMETHOD.
 
-
   METHOD get_main_prog_by_include.
-    DATA: main_programs TYPE programt.
+    DATA main_programs TYPE programt.
 
     CALL FUNCTION 'RS_GET_MAINPROGRAMS'
-      EXPORTING
-        name         = include
-      TABLES
-        mainprograms = main_programs
-      EXCEPTIONS
-        cancelled    = 1
-        OTHERS       = 2.
+      EXPORTING  name         = include
+      TABLES     mainprograms = main_programs
+      EXCEPTIONS cancelled    = 1
+                 OTHERS       = 2.
 
     IF sy-subrc <> 0 OR main_programs IS INITIAL.
       RETURN.
@@ -97,20 +97,15 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
     result = main_programs[ 1 ].
   ENDMETHOD.
 
-
   METHOD get_function_main_prog.
     DATA(funcname) = function_name.
     CALL FUNCTION 'FUNCTION_INCLUDE_INFO'
-      IMPORTING
-        pname    = result
-      CHANGING
-        funcname = funcname
-      EXCEPTIONS
-        OTHERS   = 1.
+      IMPORTING  pname    = result
+      CHANGING   funcname = funcname
+      EXCEPTIONS OTHERS   = 1.
     IF sy-subrc <> 0.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD resolve_main_prog_om.
     CHECK ignore_filled = abap_true OR element_info->main_program IS INITIAL.
@@ -120,23 +115,8 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    TRY.
-        cl_abap_typedescr=>describe_by_name( EXPORTING  p_name      = element_info->encl_object_name
-                                             RECEIVING  p_descr_ref = DATA(typedescr)
-                                             EXCEPTIONS OTHERS      = 1 ).
-      CATCH cx_root INTO DATA(syntax_error).
-        RAISE EXCEPTION TYPE zcx_acallh_exception
-          EXPORTING
-            text = |{ syntax_error->get_text( ) }|.
-    ENDTRY.
-    IF sy-subrc <> 0.
-      RAISE EXCEPTION TYPE zcx_acallh_exception
-        EXPORTING
-          text = |Type { element_info->encl_object_name } not found!|.
-    ENDIF.
-
-    DATA(class_typedescr) = CAST cl_abap_objectdescr( typedescr ).
-    IF class_typedescr->kind = cl_abap_typedescr=>kind_class.
+    DATA(type_kind) = get_clif_type( CONV #( element_info->encl_object_name ) ).
+    IF type_kind = seoc_clstype_class.
       element_info->main_program = cl_oo_classname_service=>get_classpool_name( CONV #( element_info->encl_object_name ) ).
     ELSE.
       " check if full name has the class name in the front
@@ -148,20 +128,17 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
         IF sy-subrc = 0 AND encl_class_descr->kind = cl_abap_typedescr=>kind_class.
 
           DATA(interfaces) = CAST cl_abap_classdescr( encl_class_descr )->interfaces.
-          IF interfaces IS NOT INITIAL AND
-              line_exists( interfaces[ name = element_info->encl_object_name ] ).
+          IF     interfaces IS NOT INITIAL
+             AND line_exists( interfaces[ name = element_info->encl_object_name ] ).
             element_info->main_program = cl_oo_classname_service=>get_classpool_name(
-              CONV #( CAST cl_abap_objectdescr( encl_class_descr )->get_relative_name( ) ) ).
+                CONV #( CAST cl_abap_objectdescr( encl_class_descr )->get_relative_name( ) ) ).
           ENDIF.
         ENDIF.
       ENDIF.
     ENDIF.
   ENDMETHOD.
 
-
   METHOD get_from_full_name.
-    DATA class_type TYPE seoclstype.
-
     DATA(full_name_info) = zcl_acallh_fullname_util=>get_info_obj( full_name ).
 
     CASE full_name_info->get_abap_fullname_tag( ).
@@ -175,22 +152,11 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
         ELSE.
           DATA(classname) = CONV classname( first_part-value ).
 
-          " check if type is class or interface
-          CALL FUNCTION 'SEO_CLIF_EXISTENCE_CHECK'
-            EXPORTING
-              cifkey  = VALUE seoclskey( clsname = classname )
-            IMPORTING
-              clstype = class_type
-            EXCEPTIONS
-              OTHERS  = 1.
-          IF sy-subrc = 0.
-            IF class_type = seoc_clstype_class.
-              result = cl_oo_classname_service=>get_classpool_name( classname ).
-            ELSE.
-              result = cl_oo_classname_service=>get_interfacepool_name( classname ).
-            ENDIF.
+          IF get_clif_type( classname ) = seoc_clstype_class.
+            result = cl_oo_classname_service=>get_classpool_name( classname ).
+          ELSE.
+            result = cl_oo_classname_service=>get_interfacepool_name( classname ).
           ENDIF.
-
         ENDIF.
 
       WHEN cl_abap_compiler=>tag_form.
@@ -202,4 +168,13 @@ CLASS zcl_acallh_mainprog_resolver IMPLEMENTATION.
     ENDCASE.
   ENDMETHOD.
 
+  METHOD get_clif_type.
+    CALL FUNCTION 'SEO_CLIF_EXISTENCE_CHECK'
+      EXPORTING  cifkey  = VALUE seoclskey( clsname = classname )
+      IMPORTING  clstype = result
+      EXCEPTIONS OTHERS  = 1.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE zcx_acallh_exception.
+    ENDIF.
+  ENDMETHOD.
 ENDCLASS.
