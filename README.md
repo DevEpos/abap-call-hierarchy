@@ -3,7 +3,7 @@
 
 > 🚧 NOTE: Still under development, so not feature complete
 
-ADT Backend for eclipse plugin [ABAP Call Hierarchy](https://github.com/stockbal/abap-call-hierarchy-ui).
+ADT Backend for eclipse plugin [ABAP Call Hierarchy](https://github.com/DevEpos/eclipse-adt-plugins/tree/main/features/call-hierarchy).
 
 ## Installation
 
